@@ -1,15 +1,15 @@
 # finds
 
 <!-- run command: npm run build -->
-<!-- 
+<!--
 src/
- ├─ assets/          
+ ├─ assets/
  ├─ components/      # Reusable components
  ├─ views/           # Page components
  ├─ router/          # Vue Router
  ├─ store/           # Pinia store
  ├─ composables/     # Logic reusable
- ├─ plugins/         
+ ├─ plugins/
  ├─ App.vue
  └─ main.ts
   -->

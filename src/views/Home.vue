@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { useCounter } from '@/composables/useCounter';
-import ButtonPrimary from '@/components/ButtonPrimary.vue';
-import GameCanvas from '@/components/GameCanvas.vue';
+import { useCounter } from "@/composables/useCounter";
+import ButtonPrimary from "@/components/ButtonPrimary.vue";
+import GameCanvas from "@/components/GameCanvas.vue";
 
 const { count, increment } = useCounter(0);
 </script>
