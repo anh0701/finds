@@ -13,6 +13,7 @@ let intervalId: number | undefined
 onMounted(() => {
   const ctx = canvas.value?.getContext('2d')
   if (!ctx) return
+  ctx.imageSmoothingEnabled = false
 
   const sprite = new Image()
   sprite.src = rabbitSprite
@@ -64,15 +65,15 @@ onMounted(() => {
         0,
         frameWidth,
         frameHeight,
-        150,
+        50,
         y,
         drawWidth,
         drawHeight
       )
 
       // overlay 
-      ctx.fillStyle = 'rgba(255, 200, 200, 0.3)'
-      ctx.fillRect(150, y, drawWidth, drawHeight)
+      // ctx.fillStyle = 'rgba(255, 200, 200, 0.3)'
+      // ctx.fillRect(150, y, drawWidth, drawHeight)
 
       if (isAnimating.value) frame = (frame + 1) % totalFrames
 
