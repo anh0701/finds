@@ -1,7 +1,6 @@
-export interface Player {
+export type Player = {
   x: number;
   y: number;
-  size: number;
-  color: string;
-  speed: number;
-}
+  jump: boolean;
+  velocity: number;
+};
