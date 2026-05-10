@@ -10,8 +10,7 @@ export function loadImages(map: Record<string, string>): Promise<LoadedImages> {
         const img = new Image();
         img.src = map[k];
         img.onload = () => resolve({ k, img });
-        img.onerror = (e) =>
-          reject(new Error(`Failed to load image ${map[k]}`));
+        img.onerror = () => reject(new Error(`Failed to load image ${map[k]}`));
         img.crossOrigin = "anonymous";
       },
     );

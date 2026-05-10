@@ -107,10 +107,10 @@ onMounted(() => {
   // window.addEventListener("resize", handleResize);
 });
 
-// onBeforeUnmount(() => {
-//   if (rafId != null) cancelAnimationFrame(rafId);
-//   window.removeEventListener("resize", handleResize);
-// });
+onBeforeUnmount(() => {
+  // if (rafId != null) cancelAnimationFrame(rafId);
+  // window.removeEventListener("resize", handleResize);
+});
 </script>
 
 <style scoped>

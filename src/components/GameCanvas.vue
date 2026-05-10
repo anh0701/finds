@@ -4,6 +4,8 @@ import rabbitSprite from "@/assets/rabbit_sprites.png";
 import { movePlayer } from "@/composables/movePlayer";
 import type { Player } from "@/composables/models/player";
 import { draw } from "@/composables/drawPlayer";
+import { useObstacles } from "@/composables/useObstacles";
+import type { Obstacle } from "@/composables/models/obstacle";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const isAnimating = ref(true);
@@ -17,6 +19,8 @@ const player = ref<Player>({
   velocity: 0,
 });
 
+const { obstacles, placeOnGround, drawObstacles } = useObstacles();
+
 const keys: Record<string, boolean> = {};
 let intervalId: number | undefined;
 
@@ -25,17 +29,22 @@ let handleKeyUp: (e: KeyboardEvent) => void;
 
 onMounted(async () => {
   await nextTick();
+
   const canvasEl = canvas.value!;
   const ctx = canvasEl.getContext("2d");
+
   if (!ctx) return;
 
   // DPI scale
   const rect = canvasEl.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
+
   canvasEl.width = rect.width * dpr;
   canvasEl.height = rect.height * dpr;
+
   canvasEl.style.width = rect.width + "px";
   canvasEl.style.height = rect.height + "px";
+
   ctx.scale(dpr, dpr);
   ctx.imageSmoothingEnabled = false;
 
@@ -47,31 +56,45 @@ onMounted(async () => {
 
   sprite.onload = () => {
     const totalFrames = 4;
+
     const frameWidth = sprite.width / totalFrames;
     const frameHeight = sprite.height;
 
     const scale = 0.3;
+
     const drawWidth = frameWidth * scale;
     const drawHeight = frameHeight * scale;
 
     const groundHeight = 10;
     const groundY = H - groundHeight;
+
     player.value.y = groundY - drawHeight;
+
+    placeOnGround(groundY);
 
     let frame = ref(0);
 
     function loop() {
-      if (player.value.jump) {
-        player.value.y += player.value.velocity;
-        player.value.velocity += 0.5;
-        if (player.value.y >= groundY - drawHeight) {
-          player.value.y = groundY - drawHeight;
-          player.value.jump = false;
-          player.value.velocity = 0;
-        }
+      // ===== gravity luôn chạy =====
+      player.value.y += player.value.velocity;
+      player.value.velocity += 0.5;
+
+      // ===== ground collision =====
+      if (player.value.y >= groundY - drawHeight) {
+        player.value.y = groundY - drawHeight;
+        player.value.velocity = 0;
+        player.value.jump = false;
       }
 
-      movePlayer(keys, player.value, W, drawWidth, drawHeight, groundY, facing);
+      movePlayer(
+        keys,
+        player.value,
+        W,
+        drawWidth,
+        drawHeight,
+        groundY,
+        facing
+      );
 
       draw(
         ctx,
@@ -89,8 +112,74 @@ onMounted(async () => {
         frameWidth,
         frameHeight,
         isAnimating,
-        totalFrames,
+        totalFrames
       );
+
+      drawObstacles(ctx!);
+
+      // ===== obstacle collision =====
+      let onObstacle = false;
+
+      obstacles.value.forEach((obs: Obstacle) => {
+        const playerBottom = player.value.y + drawHeight;
+        const playerTop = player.value.y;
+
+        const playerRight = player.value.x + drawWidth;
+        const playerLeft = player.value.x;
+
+        const obsBottom = obs.y + obs.height;
+        const obsTop = obs.y;
+
+        const obsRight = obs.x + obs.width;
+        const obsLeft = obs.x;
+
+        const isOverlap =
+          playerRight > obsLeft &&
+          playerLeft < obsRight &&
+          playerBottom > obsTop &&
+          playerTop < obsBottom;
+
+        if (!isOverlap) return;
+
+        // ===== đứng trên obstacle =====
+        const landing =
+          playerBottom >= obsTop &&
+          playerBottom <= obsTop + 10 &&
+          player.value.velocity >= 0;
+
+        if (landing) {
+          onObstacle = true;
+
+          player.value.y = obsTop - drawHeight;
+          player.value.velocity = 0;
+          player.value.jump = false;
+
+          return;
+        }
+
+        // ===== đâm ngang =====
+        const overlapY =
+          playerBottom > obsTop &&
+          playerTop < obsBottom;
+
+        if (overlapY) {
+          if (keys["ArrowRight"] || keys["KeyD"]) {
+            player.value.x = obsLeft - drawWidth;
+          }
+
+          if (keys["ArrowLeft"] || keys["KeyA"]) {
+            player.value.x = obsRight;
+          }
+        }
+      });
+
+      // ===== rơi khỏi obstacle =====
+      if (
+        !onObstacle &&
+        player.value.y < groundY - drawHeight
+      ) {
+        player.value.jump = true;
+      }
     }
 
     intervalId = window.setInterval(loop, 120);
@@ -99,7 +188,10 @@ onMounted(async () => {
   handleKeyDown = (e: KeyboardEvent) => {
     keys[e.code] = true;
 
-    if (e.code === "Space" && !player.value.jump) {
+    if (
+      e.code === "Space" &&
+      !player.value.jump
+    ) {
       player.value.jump = true;
       player.value.velocity = -10;
     }
@@ -118,9 +210,19 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (intervalId) clearInterval(intervalId);
-  window.removeEventListener("keydown", handleKeyDown);
-  window.removeEventListener("keyup", handleKeyUp);
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+
+  window.removeEventListener(
+    "keydown",
+    handleKeyDown
+  );
+
+  window.removeEventListener(
+    "keyup",
+    handleKeyUp
+  );
 });
 </script>
 
@@ -133,8 +235,11 @@ onBeforeUnmount(() => {
       class="h-[90vh] w-[90vw] block overflow-hidden border border-gray-300 rounded shadow bg-[#faf7ef]"
     ></canvas>
 
-    <div class="absolute top-2 left-2 text-sm text-gray-700 font-mono">
-      ← → hoặc A D: di chuyển • Space: nhảy • S: bật/tắt animation
+    <div
+      class="absolute top-2 left-2 text-sm text-gray-700 font-mono"
+    >
+      ← → hoặc A D: di chuyển • Space: nhảy • S:
+      bật/tắt animation
     </div>
   </div>
 </template>
