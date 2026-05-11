@@ -1,451 +1,288 @@
 <template>
   <div
-    class="min-h-screen bg-slate-900 flex flex-col items-center p-4 md:pt-6 text-white"
+    class="h-screen overflow-hidden bg-gradient-to-b from-sky-300 to-sky-100 relative select-none"
   >
     <!-- HUD -->
     <div
-      class="w-full max-w-[900px] px-2 flex flex-col md:flex-row gap-3 md:justify-between md:items-center mb-4"
+      class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black/70 px-5 py-2 rounded-xl text-white flex gap-4 font-bold"
     >
-      <h1 class="text-2xl md:text-3xl font-black">English Quiz Platformer</h1>
-
-      <!-- HUD INFO -->
-      <div class="flex gap-3 flex-wrap">
-
-        <div
-          class="bg-slate-800 px-4 py-2 rounded-xl font-bold text-sm md:text-base"
-        >
-          Level {{ currentLevel.id }}
-        </div>
-
-        <div
-          class="bg-slate-800 px-4 py-2 rounded-xl font-bold text-sm md:text-base"
-        >
-          Score:
-          {{ score }}/{{ currentLevel.requiredScore }}
-        </div>
-      </div>
+      <div>Score: {{ score }}</div>
+      <div>Correct: {{ correct }}</div>
     </div>
 
-    <!-- GAME WRAPPER -->
+    <!-- GAME OVER -->
     <div
-      ref="gameWrapper"
-      class="w-full overflow-x-auto flex justify-start md:justify-center"
+      v-if="gameOver"
+      class="fixed inset-0 bg-black/70 flex items-center justify-center text-white text-3xl font-bold z-50"
     >
-      <!-- GAME -->
-      <div
-        class="relative overflow-hidden border-4 border-white rounded-2xl bg-sky-300 shadow-2xl shrink-0"
-        :style="{
-          width: currentLevel.worldWidth + 'px',
+      GAME OVER
+    </div>
 
-          height: currentLevel.worldHeight + 'px',
+    <!-- WORLD -->
+    <div class="absolute inset-0">
+      <!-- PLATFORMS -->
+      <div
+        v-for="p in platforms"
+        :key="p.id"
+        class="absolute"
+        :style="{
+          left: p.x + 'px',
+          top: p.y - cameraY + 'px',
+          width: p.width + 'px',
+          height: p.height + 'px',
         }"
-        style="touch-action: none"
       >
-        <!-- GROUNDS -->
         <div
-          v-for="ground in grounds"
-          :key="ground.id"
-          class="absolute bg-green-800"
-          :style="{
-            left: ground.x + 'px',
-            top: ground.y + 'px',
-            width: ground.width + 'px',
-            height: ground.height + 'px',
-          }"
+          class="w-full h-full rounded-full border-4"
+          :class="platformStyle(p)"
         />
 
-        <!-- QUESTION BLOCKS -->
         <div
-          v-for="block in questionBlocks"
-          :key="block.id"
-          class="absolute w-[50px] h-[50px] rounded-lg border-4 border-yellow-600 bg-yellow-400 flex items-center justify-center text-2xl font-black text-black transition"
-          :style="{
-            left: block.x + 'px',
-            top: block.y + 'px',
-            opacity: block.answered ? 0.3 : 1,
-          }"
+          v-if="p.type === 'question'"
+          class="absolute -top-7 left-1/2 -translate-x-1/2 w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center font-black"
         >
           ?
         </div>
 
-        <!-- PLAYER -->
         <div
-          class="absolute w-[40px] h-[40px] rounded-lg bg-red-500 border-2 border-red-700 transition-[left,top] duration-75"
-          :style="{
-            left: player.x + 'px',
-            top: player.y + 'px',
-          }"
-        />
+          v-if="p.type === 'energy'"
+          class="absolute -top-7 left-1/2 -translate-x-1/2 w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center font-black"
+        >
+          ⚡
+        </div>
       </div>
-    </div>
 
-    <!-- LEVEL COMPLETE -->
-    <div
-      v-if="isWin"
-      class="mt-6 text-3xl md:text-5xl font-black text-yellow-300 animate-bounce text-center"
-    >
-      LEVEL COMPLETE
-    </div>
-
-    <!-- GAME FINISHED -->
-    <div
-      v-if="isGameFinished"
-      class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4"
-    >
+      <!-- PLAYER -->
       <div
-        class="w-[90vw] max-w-[500px] bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 md:p-10 flex flex-col items-center gap-6 shadow-2xl"
-      >
-        <h1
-          class="text-4xl md:text-6xl font-black text-yellow-300 tracking-[4px] md:tracking-[6px] animate-pulse text-center"
-        >
-          YOU WIN
-        </h1>
-        <p
-          class="text-slate-300 text-base md:text-xl font-semibold text-center"
-        >
-          All levels completed
-        </p>
-        <button
-          @click="restartGame"
-          class="px-6 md:px-8 py-3 md:py-4 rounded-2xl bg-yellow-400 text-black font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
-        >
-          PLAY AGAIN
-        </button>
-      </div>
-    </div>
-
-    <!-- MOBILE CONTROLS -->
-    <div
-      class="fixed bottom-4 left-0 right-0 flex justify-between px-6 md:hidden z-40 pointer-events-none"
-    >
-      <!-- LEFT / RIGHT -->
-      <div class="flex gap-4 pointer-events-auto">
-
-        <button
-          @touchstart.prevent="mobileControls.left = true"
-          @touchend="mobileControls.left = false"
-          class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
-        >
-          L
-        </button>
-
-        <button
-          @touchstart.prevent="mobileControls.right = true"
-          @touchend="mobileControls.right = false"
-          class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
-        >
-          R
-        </button>
-      </div>
-
-      <div class="pointer-events-auto">
-        <button
-          @touchstart.prevent="mobileControls.jump = true"
-          class="w-20 h-20 rounded-full bg-yellow-400/90 text-black font-black text-xl border-4 border-yellow-200 shadow-xl active:scale-95"
-        >
-          JUMP
-        </button>
-      </div>
+        class="absolute bg-red-500 border-4 border-red-700 rounded-md"
+        :style="{
+          left: player.x + 'px',
+          top: player.y - cameraY + 'px',
+          width: player.width + 'px',
+          height: player.height + 'px',
+        }"
+      />
     </div>
 
     <!-- QUESTION -->
-    <QuestionModal
-      v-if="currentQuestion"
-      :question="currentQuestion"
-      @answer="handleAnswer"
-    />
+    <QuestionModal v-if="question" :question="question" @answer="answer" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted, nextTick } from "vue";
-
+import { ref, reactive, onMounted, onUnmounted } from "vue";
+import questions from "@/data/questions.json";
 import QuestionModal from "./QuestionModal.vue";
 
-import questionsData from "../data/questions.json";
+const score = ref(0);
+const correct = ref(0);
+const gameOver = ref(false);
+const question = ref<any>(null);
 
-import { levels } from "../data/levels";
+const cameraY = ref(0);
 
-import type {
-  Level,
-  Ground,
-  Question,
-  QuestionBlock,
-  Player,
-  Rect,
-} from "../types/game";
-import { useKeyboard } from "@/composable/useKeyboard";
-
-const gravity = 0.6;
-
-const jumpForce = -12;
-
-const { keys } = useKeyboard();
-
-const gameWrapper = ref<HTMLDivElement | null>(null);
-
-if (levels.length === 0) {
-  throw new Error("Levels data is empty");
-}
-
-const currentLevel = ref<Level>(levels[0]!);
-
-const currentLevelIndex = ref(0);
-
-const grounds = ref<Ground[]>(currentLevel.value.grounds);
-
-const questionBlocks = ref<QuestionBlock[]>(
-  JSON.parse(JSON.stringify(currentLevel.value.questionBlocks)),
-);
-
-const mobileControls = reactive({
+const input = reactive({
   left: false,
   right: false,
-  jump: false,
 });
 
-const player = reactive<Player>({
-  x: currentLevel.value.playerStart.x,
-
-  y: currentLevel.value.playerStart.y,
-
+const player = reactive({
+  x: window.innerWidth / 2,
+  y: 300,
+  vx: 0,
+  vy: 0,
   width: 40,
-
   height: 40,
-
-  velocityY: 0,
-
-  speed: 5,
-
-  isJumping: false,
+  grounded: false,
 });
 
-const currentQuestion = ref<Question | null>(null);
+const platforms = ref<any[]>([]);
+const PLATFORM_GAP = 110;
 
-const activeBlockId = ref<number | null>(null);
+let rafId: number | null = null;
 
-const score = ref(0);
-
-const isWin = ref(false);
-
-const isGameFinished = ref(false);
-
-function isColliding(a: Rect, b: Rect) {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
+function platformStyle(p: any) {
+  if (p.type === "energy") return "bg-blue-400 border-blue-600";
+  if (p.type === "question") return "bg-yellow-400 border-yellow-600";
+  return "bg-green-500 border-green-700";
 }
 
-function focusPlayer() {
-  nextTick(() => {
-    if (!gameWrapper.value) return;
+function getW() {
+  return window.innerWidth;
+}
 
-    // desktop không follow
-    if (window.innerWidth >= 768) return;
+function onKeyDown(e: KeyboardEvent) {
+  if (e.code === "ArrowLeft") input.left = true;
+  if (e.code === "ArrowRight") input.right = true;
+  if (e.code === "Space") jump();
+}
 
-    const wrapper = gameWrapper.value;
+function onKeyUp(e: KeyboardEvent) {
+  if (e.code === "ArrowLeft") input.left = false;
+  if (e.code === "ArrowRight") input.right = false;
+}
 
-    const screenWidth = wrapper.clientWidth;
+function movePlayer() {
+  const speed = 3.2;
 
-    let target = player.x - screenWidth / 2 + player.width / 2;
+  if (input.left) player.vx = -speed;
+  else if (input.right) player.vx = speed;
+  else player.vx *= 0.85;
 
-    // LEFT LIMIT
-    if (target < 0) {
-      target = 0;
+  player.x += player.vx;
+}
+
+function jump() {
+  if (!player.grounded) return;
+  player.vy = -9; // nhẹ hơn
+}
+
+function physics() {
+  const gravity = 0.35;
+
+  player.vy += gravity;
+
+  const nextY = player.y + player.vy;
+  const prevBottom = player.y + player.height;
+  const nextBottom = nextY + player.height;
+
+  player.grounded = false;
+
+  for (const p of platforms.value) {
+    const isOverlappingX =
+      player.x + player.width > p.x && player.x < p.x + p.width;
+
+    const isLanding =
+      player.vy >= 0 &&
+      isOverlappingX &&
+      prevBottom <= p.y &&
+      nextBottom >= p.y;
+
+    if (!isLanding) continue;
+
+    player.y = p.y - player.height;
+    player.vy = 0;
+    player.grounded = true;
+
+    if (p.type === "question" && !p.used) {
+      p.used = true;
+      question.value = questions[p.qId];
     }
 
-    // RIGHT LIMIT
-    const maxScroll = currentLevel.value.worldWidth - screenWidth;
-
-    if (target > maxScroll) {
-      target = maxScroll;
+    if (p.type === "energy" && !p.used) {
+      player.vy = -11;
+      p.used = true;
     }
-
-    // SMOOTH FOLLOW
-    wrapper.scrollLeft += (target - wrapper.scrollLeft) * 0.1;
-  });
-}
-
-function loadLevel(index: number) {
-  const level = levels[index];
-
-  if (!level) return;
-
-  currentLevel.value = level;
-
-  grounds.value = level.grounds;
-
-  questionBlocks.value = JSON.parse(JSON.stringify(level.questionBlocks));
-
-  score.value = 0;
-
-  player.x = level.playerStart.x;
-
-  player.y = level.playerStart.y;
-
-  player.velocityY = 0;
-
-  isWin.value = false;
-
-  focusPlayer();
-}
-
-function nextLevel() {
-  const nextIndex = currentLevelIndex.value + 1;
-
-  // FINISHED GAME
-  if (nextIndex >= levels.length) {
-    isGameFinished.value = true;
 
     return;
   }
 
-  currentLevelIndex.value = nextIndex;
+  player.y = nextY;
 
-  loadLevel(nextIndex);
-}
-
-function restartGame() {
-  currentLevelIndex.value = 0;
-
-  isGameFinished.value = false;
-
-  loadLevel(0);
-}
-
-function update() {
-  // STOP GAME
-  if (isGameFinished.value) return;
-
-  // STOP WHEN QUESTION OPEN
-  if (currentQuestion.value) return;
-
-  // MOVE LEFT
-  if (keys.value["ArrowLeft"] || mobileControls.left) {
-    player.x -= player.speed;
-  }
-
-  // MOVE RIGHT
-  if (keys.value["ArrowRight"] || mobileControls.right) {
-    player.x += player.speed;
-  }
-
-  // LEFT WALL
-  if (player.x < 0) {
-    player.x = 0;
-  }
-
-  // RIGHT WALL
-  if (player.x + player.width > currentLevel.value.worldWidth) {
-    player.x = currentLevel.value.worldWidth - player.width;
-  }
-
-  // MOBILE CAMERA FOLLOW
-  focusPlayer();
-
-  // JUMP
-  if ((keys.value["Space"] || mobileControls.jump) && !player.isJumping) {
-    player.velocityY = jumpForce;
-
-    player.isJumping = true;
-  }
-
-  // GRAVITY
-  player.velocityY += gravity;
-
-  player.y += player.velocityY;
-
-  // FALL OUTSIDE MAP
-  if (player.y > currentLevel.value.worldHeight + 200) {
-    player.x = currentLevel.value.playerStart.x;
-
-    player.y = currentLevel.value.playerStart.y;
-
-    player.velocityY = 0;
-  }
-
-  // RESET
-  player.isJumping = true;
-
-  // reset mobile jump
-  mobileControls.jump = false;
-
-  // GROUND COLLISION
-  for (const ground of grounds.value) {
-    if (isColliding(player, ground)) {
-      if (player.velocityY >= 0) {
-        player.y = ground.y - player.height;
-
-        player.velocityY = 0;
-
-        player.isJumping = false;
-      }
-    }
-  }
-
-  // QUESTION COLLISION
-  for (const block of questionBlocks.value) {
-    if (
-      !block.answered &&
-      isColliding(player, block) &&
-      !currentQuestion.value
-    ) {
-      activeBlockId.value = block.id;
-
-      const question = questionsData.find((q) => q.id === block.questionId);
-
-      if (question) {
-        currentQuestion.value = question;
-      }
-    }
-  }
-
-  // COMPLETE LEVEL
-  if (score.value >= currentLevel.value.requiredScore && !isWin.value) {
-    isWin.value = true;
-
-    setTimeout(() => {
-      nextLevel();
-    }, 1500);
+  if (player.y - cameraY.value > window.innerHeight + 200) {
+    triggerGameOver();
   }
 }
 
-function handleAnswer(choice: string) {
-  if (!currentQuestion.value) return;
+function updateCamera() {
+  const target = player.y - 180;
+  cameraY.value += (target - cameraY.value) * 0.09;
+}
 
-  if (choice === currentQuestion.value.answer) {
-    score.value++;
+function createPlatform(y: number, prevX: number) {
+  const r = Math.random();
 
-    const block = questionBlocks.value.find(
-      (b) => b.id === activeBlockId.value,
+  let type = "normal";
+  if (r > 0.85) type = "energy";
+  else if (r > 0.7) type = "question";
+
+  let x = prevX + (Math.random() * 140 - 70);
+  x = Math.max(20, Math.min(x, getW() - 140));
+
+  return {
+    id: crypto?.randomUUID?.() ?? String(Math.random()),
+    x,
+    y,
+    width: 140,
+    height: 18,
+    type,
+    qId:
+      type === "question" ? Math.floor(Math.random() * questions.length) : null,
+    used: false,
+  };
+}
+
+function initWorld() {
+  const list: any[] = [];
+  let prevX = getW() / 2;
+
+  for (let i = 0; i < 18; i++) {
+    const y = 600 - i * PLATFORM_GAP;
+    const p = createPlatform(y, prevX);
+    prevX = p.x;
+    list.push(p);
+  }
+
+  platforms.value = list;
+}
+
+function spawn() {
+  const highest = Math.min(...platforms.value.map((p) => p.y));
+
+  if (highest > cameraY.value - 500) {
+    platforms.value.push(
+      createPlatform(highest - PLATFORM_GAP, Math.random() * getW()),
     );
-
-    if (block) {
-      block.answered = true;
-    }
   }
-
-  currentQuestion.value = null;
 }
 
-let animationId = 0;
+function checkRules() {}
 
-function gameLoop() {
-  update();
+function answer(c: string) {
+  if (!question.value || gameOver.value) return;
 
-  animationId = requestAnimationFrame(gameLoop);
+  const ok = c === question.value.answer;
+
+  if (ok) {
+    score.value += 100;
+    correct.value += 1;
+    player.vy = -10;
+  } else {
+    player.vy = -5;
+  }
+
+  question.value = null;
+}
+
+function triggerGameOver() {
+  gameOver.value = true;
+  if (rafId) cancelAnimationFrame(rafId);
+}
+
+function loop() {
+  if (gameOver.value) return;
+
+  movePlayer();
+  physics();
+  updateCamera();
+  spawn();
+  checkRules();
+
+  rafId = requestAnimationFrame(loop);
 }
 
 onMounted(() => {
-  focusPlayer();
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
 
-  gameLoop();
+  initWorld();
+  loop();
 });
 
 onUnmounted(() => {
-  cancelAnimationFrame(animationId);
+  window.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener("keyup", onKeyUp);
+
+  if (rafId) cancelAnimationFrame(rafId);
 });
 </script>
