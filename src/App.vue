@@ -1,7 +1,9 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import GameCanvas from "./components/GameCanvas.vue";
+</script>
 
 <template>
   <div id="app">
-    <router-view />
+    <game-canvas />
   </div>
 </template>
