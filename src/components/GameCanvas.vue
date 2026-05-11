@@ -6,19 +6,17 @@
     <div
       class="w-full max-w-[900px] px-2 flex flex-col md:flex-row gap-3 md:justify-between md:items-center mb-4"
     >
-      <!-- TITLE -->
       <h1 class="text-2xl md:text-3xl font-black">English Quiz Platformer</h1>
 
       <!-- HUD INFO -->
       <div class="flex gap-3 flex-wrap">
-        <!-- LEVEL -->
+
         <div
           class="bg-slate-800 px-4 py-2 rounded-xl font-bold text-sm md:text-base"
         >
           Level {{ currentLevel.id }}
         </div>
 
-        <!-- SCORE -->
         <div
           class="bg-slate-800 px-4 py-2 rounded-xl font-bold text-sm md:text-base"
         >
@@ -97,21 +95,16 @@
       <div
         class="w-[90vw] max-w-[500px] bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 md:p-10 flex flex-col items-center gap-6 shadow-2xl"
       >
-        <!-- TITLE -->
         <h1
           class="text-4xl md:text-6xl font-black text-yellow-300 tracking-[4px] md:tracking-[6px] animate-pulse text-center"
         >
           YOU WIN
         </h1>
-
-        <!-- TEXT -->
         <p
           class="text-slate-300 text-base md:text-xl font-semibold text-center"
         >
           All levels completed
         </p>
-
-        <!-- BUTTON -->
         <button
           @click="restartGame"
           class="px-6 md:px-8 py-3 md:py-4 rounded-2xl bg-yellow-400 text-black font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
@@ -127,26 +120,24 @@
     >
       <!-- LEFT / RIGHT -->
       <div class="flex gap-4 pointer-events-auto">
-        <!-- LEFT -->
+
         <button
           @touchstart.prevent="mobileControls.left = true"
           @touchend="mobileControls.left = false"
           class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
         >
-          ←
+          L
         </button>
 
-        <!-- RIGHT -->
         <button
           @touchstart.prevent="mobileControls.right = true"
           @touchend="mobileControls.right = false"
           class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
         >
-          →
+          R
         </button>
       </div>
 
-      <!-- JUMP -->
       <div class="pointer-events-auto">
         <button
           @touchstart.prevent="mobileControls.jump = true"
