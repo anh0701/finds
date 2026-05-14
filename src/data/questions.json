@@ -1,62 +1,127 @@
 [
   {
     "id": 1,
-    "question": "What color is the sky?",
-    "choices": ["Blue", "Red", "Green", "Black"],
-    "answer": "Blue"
+    "question": "What color is grass?",
+    "choices": ["Blue", "Green", "Purple", "Orange"],
+    "answer": "Green"
   },
   {
     "id": 2,
-    "question": "Which animal says meow?",
-    "choices": ["Dog", "Cat", "Cow", "Duck"],
-    "answer": "Cat"
+    "question": "Which animal barks?",
+    "choices": ["Dog", "Cat", "Duck", "Fish"],
+    "answer": "Dog"
   },
   {
     "id": 3,
-    "question": "How many days are in a week?",
-    "choices": ["5", "6", "7", "8"],
-    "answer": "7"
+    "question": "5 + 3 = ?",
+    "choices": ["6", "7", "8", "9"],
+    "answer": "8"
   },
   {
     "id": 4,
-    "question": "Which fruit is yellow?",
-    "choices": ["Apple", "Banana", "Grape", "Orange"],
-    "answer": "Banana"
+    "question": "Which month has 28 or 29 days?",
+    "choices": ["January", "February", "March", "June"],
+    "answer": "February"
   },
   {
     "id": 5,
-    "question": "What is the opposite of hot?",
-    "choices": ["Warm", "Cold", "Dry", "Soft"],
-    "answer": "Cold"
-  },
-  {
-    "id": 6,
-    "question": "Which one is a bird?",
-    "choices": ["Tiger", "Eagle", "Shark", "Snake"],
-    "answer": "Eagle"
-  },
-  {
-    "id": 7,
-    "question": "What do bees make?",
-    "choices": ["Milk", "Honey", "Bread", "Juice"],
-    "answer": "Honey"
-  },
-  {
-    "id": 8,
-    "question": "Which season is the coldest?",
-    "choices": ["Summer", "Spring", "Winter", "Autumn"],
-    "answer": "Winter"
-  },
-  {
-    "id": 9,
-    "question": "What do you drink when thirsty?",
-    "choices": ["Water", "Sand", "Paper", "Stone"],
+    "question": "What do cows drink?",
+    "choices": ["Milk", "Water", "Juice", "Tea"],
     "answer": "Water"
   },
   {
+    "id": 6,
+    "question": "Which planet do we live on?",
+    "choices": ["Mars", "Earth", "Venus", "Jupiter"],
+    "answer": "Earth"
+  },
+  {
+    "id": 7,
+    "question": "Which is faster?",
+    "choices": ["Turtle", "Snail", "Rabbit", "Rock"],
+    "answer": "Rabbit"
+  },
+  {
+    "id": 8,
+    "question": "HTML stands for?",
+    "choices": [
+      "Hyper Text Markup Language",
+      "Home Tool Markup Language",
+      "High Text Machine Language",
+      "Hyperlinks Text Main Language"
+    ],
+    "answer": "Hyper Text Markup Language"
+  },
+  {
+    "id": 9,
+    "question": "Which one is a programming language?",
+    "choices": ["Python", "Tiger", "Banana", "Table"],
+    "answer": "Python"
+  },
+  {
     "id": 10,
-    "question": "Which one can fly?",
-    "choices": ["Fish", "Bird", "Dog", "Elephant"],
-    "answer": "Bird"
+    "question": "How many hours are in a day?",
+    "choices": ["12", "18", "24", "36"],
+    "answer": "24"
+  },
+  {
+    "id": 11,
+    "question": "CSS is mainly used for?",
+    "choices": ["Database", "Styling", "Server", "Hardware"],
+    "answer": "Styling"
+  },
+  {
+    "id": 12,
+    "question": "Which ocean is the largest?",
+    "choices": ["Atlantic", "Indian", "Pacific", "Arctic"],
+    "answer": "Pacific"
+  },
+  {
+    "id": 13,
+    "question": "2 x 6 = ?",
+    "choices": ["10", "12", "14", "16"],
+    "answer": "12"
+  },
+  {
+    "id": 14,
+    "question": "Which device is used to type?",
+    "choices": ["Monitor", "Keyboard", "Speaker", "Mousepad"],
+    "answer": "Keyboard"
+  },
+  {
+    "id": 15,
+    "question": "Which language runs in the browser?",
+    "choices": ["Java", "Python", "JavaScript", "C"],
+    "answer": "JavaScript"
+  },
+  {
+    "id": 16,
+    "question": "Which animal lives in water?",
+    "choices": ["Lion", "Shark", "Tiger", "Wolf"],
+    "answer": "Shark"
+  },
+  {
+    "id": 17,
+    "question": "What is H2O?",
+    "choices": ["Salt", "Hydrogen", "Water", "Fire"],
+    "answer": "Water"
+  },
+  {
+    "id": 18,
+    "question": "Which country is famous for sushi?",
+    "choices": ["Japan", "Brazil", "Egypt", "Canada"],
+    "answer": "Japan"
+  },
+  {
+    "id": 19,
+    "question": "Which shape has 3 sides?",
+    "choices": ["Square", "Triangle", "Circle", "Rectangle"],
+    "answer": "Triangle"
+  },
+  {
+    "id": 20,
+    "question": "Vue is a ...",
+    "choices": ["Database", "Framework", "Browser", "Game"],
+    "answer": "Framework"
   }
 ]

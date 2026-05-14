@@ -127,22 +127,21 @@
     >
       <!-- LEFT / RIGHT -->
       <div class="flex gap-4 pointer-events-auto">
-        <!-- LEFT -->
+
         <button
           @touchstart.prevent="mobileControls.left = true"
           @touchend="mobileControls.left = false"
           class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
         >
-          ←
+          L
         </button>
 
-        <!-- RIGHT -->
         <button
           @touchstart.prevent="mobileControls.right = true"
           @touchend="mobileControls.right = false"
           class="w-16 h-16 rounded-full bg-slate-800/80 backdrop-blur border border-white/20 text-2xl font-black active:scale-95"
         >
-          →
+          R
         </button>
       </div>
 
