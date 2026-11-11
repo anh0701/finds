@@ -273,6 +273,40 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
   }
 
   function handleKeydown(event: KeyboardEvent): void {
+    const target = event.target
+
+    if (
+      target instanceof HTMLElement &&
+      (
+        target.isContentEditable ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      )
+    ) {
+      return
+    }
+
+    if (options.isInputBlocked?.()) {
+      const blockedKeys = [
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+        ' ',
+        'w',
+        'a',
+        's',
+        'd',
+      ]
+
+      if (blockedKeys.includes(event.key.toLowerCase())) {
+        event.preventDefault()
+      }
+
+      return
+    }
+
     const key = event.key.toLowerCase()
 
     if (options.isInputBlocked?.()) {
