@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import GameCanvas from "./components/GameCanvas.vue";
+import SnakeGame from './components/SnakeGame.vue';
+
 </script>
 
 <template>
   <div id="app">
-    <game-canvas />
+   <SnakeGame />
   </div>
 </template>

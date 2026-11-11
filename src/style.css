@@ -2,12 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  body {
+    @apply m-0 min-h-screen bg-[#080b16] text-white antialiased;
+  }
 
-body {
-  font-family: Arial, sans-serif;
+  * {
+    @apply box-border;
+  }
+
+  button {
+    @apply select-none;
+  }
 }
