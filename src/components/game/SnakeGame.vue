@@ -4,7 +4,7 @@ import { useSnakeGame } from '@/composables/useSnakeGame'
 
 import SnakeBoard from './SnakeBoard.vue'
 import SnakeStats from './SnakeStats.vue'
-import SnakeControls from './SnakeControls.vue'
+import SnakeControls from './SnakeControls.vue/index.js'
 
 import {
   Play,

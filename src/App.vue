@@ -1,10 +1,9 @@
 <script lang="ts" setup>
-import SnakeGame from './components/SnakeGame.vue';
-
+import GameView from './views/GameView.vue';
 </script>
 
 <template>
   <div id="app">
-   <SnakeGame />
+   <GameView />
   </div>
 </template>

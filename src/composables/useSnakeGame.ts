@@ -1,9 +1,18 @@
-
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+} from 'vue'
 
 export interface Point {
   x: number
   y: number
+}
+
+export interface SnakeGameOptions {
+  onFoodEaten?: (score: number) => void
+  isInputBlocked?: () => boolean
 }
 
 const GRID_SIZE = 20
@@ -38,15 +47,15 @@ function isSamePoint(a: Point, b: Point): boolean {
 }
 
 function createSnake(): Point[] {
-  return INITIAL_SNAKE.map(segment => ({ ...segment }))
+  return INITIAL_SNAKE.map((segment) => ({ ...segment }))
 }
 
 function createFood(snake: Point[]): Point {
   const availableCells: Point[] = []
 
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
-      const occupied = snake.some(segment =>
+  for (let y = 0; y < GRID_SIZE; y += 1) {
+    for (let x = 0; x < GRID_SIZE; x += 1) {
+      const occupied = snake.some((segment) =>
         segment.x === x && segment.y === y,
       )
 
@@ -60,7 +69,10 @@ function createFood(snake: Point[]): Point {
     return { x: -1, y: -1 }
   }
 
-  const randomIndex = Math.floor(Math.random() * availableCells.length)
+  const randomIndex = Math.floor(
+    Math.random() * availableCells.length,
+  )
+
   return availableCells[randomIndex] ?? { x: -1, y: -1 }
 }
 
@@ -72,7 +84,7 @@ function readBestScore(): number {
   }
 }
 
-export function useSnakeGame() {
+export function useSnakeGame(options: SnakeGameOptions = {}) {
   const snake = ref<Point[]>(createSnake())
   const food = ref<Point>(createFood(snake.value))
 
@@ -103,26 +115,29 @@ export function useSnakeGame() {
     (INITIAL_SPEED / speed.value).toFixed(1),
   )
 
-  function stopTimer() {
+  function stopTimer(): void {
     if (timer !== undefined) {
       clearTimeout(timer)
       timer = undefined
     }
   }
 
-  function saveBestScore() {
+  function saveBestScore(): void {
     if (score.value <= bestScore.value) return
 
     bestScore.value = score.value
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, String(bestScore.value))
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        String(bestScore.value),
+      )
     } catch {
       // Game vẫn hoạt động nếu trình duyệt không cho phép localStorage.
     }
   }
 
-  function resetGame() {
+  function resetGame(): void {
     stopTimer()
 
     snake.value = createSnake()
@@ -138,7 +153,7 @@ export function useSnakeGame() {
     isWon.value = false
   }
 
-  function endGame(won = false) {
+  function endGame(won = false): void {
     stopTimer()
 
     isPlaying.value = false
@@ -148,14 +163,14 @@ export function useSnakeGame() {
     saveBestScore()
   }
 
-  function pauseGame() {
+  function pauseGame(): void {
     if (!isPlaying.value) return
 
     isPlaying.value = false
     stopTimer()
   }
 
-  function changeDirection(next: Point) {
+  function changeDirection(next: Point): void {
     if (!isPlaying.value) return
 
     // Không cho rắn quay ngược 180 độ.
@@ -169,12 +184,13 @@ export function useSnakeGame() {
     nextDirection = next
   }
 
-  function move() {
+  function move(): void {
     if (!isPlaying.value) return
 
     direction = nextDirection
 
     const head = snake.value[0]
+
     if (!head) return
 
     const nextHead: Point = {
@@ -195,7 +211,7 @@ export function useSnakeGame() {
       ? snake.value
       : snake.value.slice(0, -1)
 
-    const hitSelf = bodyToCheck.some(segment =>
+    const hitSelf = bodyToCheck.some((segment) =>
       isSamePoint(segment, nextHead),
     )
 
@@ -217,15 +233,23 @@ export function useSnakeGame() {
       }
 
       food.value = createFood(nextSnake)
-    } else {
-      nextSnake.pop()
+      snake.value = nextSnake
+
+      // Tạm dừng để mở thử thách học tiếng Anh.
+      stopTimer()
+      isPlaying.value = false
+
+      options.onFoodEaten?.(score.value)
+      return
     }
 
+    nextSnake.pop()
     snake.value = nextSnake
+
     timer = setTimeout(move, speed.value)
   }
 
-  function startGame() {
+  function startGame(): void {
     if (isPlaying.value) return
 
     if (isGameOver.value || isWon.value) {
@@ -235,10 +259,11 @@ export function useSnakeGame() {
     isStarted.value = true
     isPlaying.value = true
 
+    stopTimer()
     timer = setTimeout(move, speed.value)
   }
 
-  function toggleGame() {
+  function toggleGame(): void {
     if (isPlaying.value) {
       pauseGame()
       return
@@ -247,8 +272,17 @@ export function useSnakeGame() {
     startGame()
   }
 
-  function handleKeydown(event: KeyboardEvent) {
+  function handleKeydown(event: KeyboardEvent): void {
     const key = event.key.toLowerCase()
+
+    if (options.isInputBlocked?.()) {
+      if (key in KEY_DIRECTIONS || key === ' ') {
+        event.preventDefault()
+      }
+
+      return
+    }
+
     const next = KEY_DIRECTIONS[key]
 
     if (next) {
@@ -263,24 +297,25 @@ export function useSnakeGame() {
     }
   }
 
-  function moveUp() {
+  function moveUp(): void {
     changeDirection({ x: 0, y: -1 })
   }
 
-  function moveDown() {
+  function moveDown(): void {
     changeDirection({ x: 0, y: 1 })
   }
 
-  function moveLeft() {
+  function moveLeft(): void {
     changeDirection({ x: -1, y: 0 })
   }
 
-  function moveRight() {
+  function moveRight(): void {
     changeDirection({ x: 1, y: 0 })
   }
 
   onMounted(() => {
     bestScore.value = readBestScore()
+
     window.addEventListener('keydown', handleKeydown)
   })
 
