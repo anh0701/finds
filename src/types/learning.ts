@@ -14,6 +14,33 @@ export type ChallengeType =
   | 'multiple-choice'
   | 'writing'
 
+export type WritingErrorType =
+  | 'grammar'
+  | 'spelling'
+  | 'keyword'
+  | 'word-count'
+  | 'format'
+
+export interface WritingError {
+  type: WritingErrorType
+  message: string
+  suggestion?: string
+}
+
+export interface WritingGrade {
+  passed: boolean
+  score: number
+  wordCount: number
+  requiredWordCount: number
+  wordCountPassed: boolean
+  requiredWordsPassed: boolean
+  grammarPassed: boolean
+  formatPassed: boolean
+  matchedKeywords: string[]
+  missingKeywords: string[]
+  errors: WritingError[]
+}
+
 export interface Challenge {
   id: string
   skill: LearningSkill
@@ -37,6 +64,7 @@ export interface ChallengeResult {
   correctAnswer: string
   explanation: string
   xpEarned: number
+  writingGrade?: WritingGrade
 }
 
 export interface SkillProgress {

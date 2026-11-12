@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { CHALLENGES, SKILLS } from '@/data/challenges'
 import { useLearningStore } from '@/stores/learningStore'
 import type {
@@ -8,6 +8,9 @@ import type {
 
 export function useAdaptiveLearning() {
   const store = useLearningStore()
+
+  // Remember the skill selected in the previous challenge.
+  const previousSkill = ref<LearningSkill | null>(null)
 
   const skillPriorities = computed(() => {
     return SKILLS
@@ -35,7 +38,57 @@ export function useAdaptiveLearning() {
   })
 
   function chooseSkill(): LearningSkill {
-    return skillPriorities.value[0]?.skill ?? 'vocabulary'
+    const availableSkills = SKILLS.filter((skill) =>
+      CHALLENGES.some((challenge) => challenge.skill === skill),
+    )
+
+    if (availableSkills.length === 0) {
+      throw new Error('No learning skills are available.')
+    }
+
+    // Avoid selecting the same skill in consecutive challenges.
+    const eligibleSkills = availableSkills.length > 1
+      ? availableSkills.filter(
+          (skill) => skill !== previousSkill.value,
+        )
+      : availableSkills
+
+    const priorities = skillPriorities.value.filter((item) =>
+      eligibleSkills.includes(item.skill),
+    )
+
+    // Use weighted random selection instead of always choosing
+    // the skill with the highest priority.
+    const weightedSkills = priorities.map((item) => ({
+      skill: item.skill,
+      weight: Math.max(item.score, 0.1) ** 2,
+    }))
+
+    const totalWeight = weightedSkills.reduce(
+      (total, item) => total + item.weight,
+      0,
+    )
+
+    let random = Math.random() * totalWeight
+
+    for (const item of weightedSkills) {
+      random -= item.weight
+
+      if (random <= 0) {
+        previousSkill.value = item.skill
+        return item.skill
+      }
+    }
+
+    const selected = weightedSkills[weightedSkills.length - 1]
+
+    if (!selected) {
+      throw new Error('Unable to select a learning skill.')
+    }
+
+    previousSkill.value = selected.skill
+
+    return selected.skill
   }
 
   function chooseChallenge(): Challenge {
@@ -65,7 +118,7 @@ export function useAdaptiveLearning() {
     }
 
     if (candidates.length === 0) {
-      candidates = CHALLENGES
+      throw new Error(`No challenges available for skill: ${skill}`)
     }
 
     const randomIndex = Math.floor(Math.random() * candidates.length)

@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { useAdaptiveLearning } from '@/composables/useAdaptiveLearning'
 import { useLearningStore } from '@/stores/learningStore'
+import { gradeWriting } from '@/services/writingGrader'
 import type {
   Challenge,
   ChallengeResult,
@@ -8,10 +9,6 @@ import type {
 
 function normalizeAnswer(value: string): string {
   return value.trim().toLowerCase()
-}
-
-function countWords(value: string): number {
-  return value.trim().split(/\s+/).filter(Boolean).length
 }
 
 export function useLearningEngine() {
@@ -37,28 +34,6 @@ export function useLearningEngine() {
     return currentChallenge.value
   }
 
-  function evaluateAnswer(
-    challenge: Challenge,
-    answer: string,
-  ): boolean {
-    if (challenge.type === 'multiple-choice') {
-      return normalizeAnswer(answer) ===
-        normalizeAnswer(challenge.correctAnswer ?? '')
-    }
-
-    const normalized = normalizeAnswer(answer)
-    const words = countWords(answer)
-
-    const meetsWordCount = words >= (challenge.minWords ?? 1)
-    const keywords = challenge.requiredKeywords ?? []
-
-    const meetsKeywords = keywords.every((keyword) =>
-      normalized.includes(keyword.toLowerCase()),
-    )
-
-    return meetsWordCount && meetsKeywords
-  }
-
   function submitAnswer(answer: string): ChallengeResult | null {
     const challenge = currentChallenge.value
 
@@ -66,8 +41,22 @@ export function useLearningEngine() {
       return null
     }
 
-    const isCorrect = evaluateAnswer(challenge, answer)
-    const xpEarned = store.recordAttempt(challenge.skill, isCorrect)
+    let isCorrect = false
+    let writingGrade: ChallengeResult['writingGrade']
+
+    if (challenge.type === 'multiple-choice') {
+      isCorrect =
+        normalizeAnswer(answer) ===
+        normalizeAnswer(challenge.correctAnswer ?? '')
+    } else {
+      writingGrade = gradeWriting(challenge, answer)
+      isCorrect = writingGrade.passed
+    }
+
+    const xpEarned = store.recordAttempt(
+      challenge.skill,
+      isCorrect,
+    )
 
     if (isCorrect && challenge.reviewWord) {
       store.addLearnedWord(challenge.reviewWord)
@@ -78,13 +67,27 @@ export function useLearningEngine() {
       store.addReviewWord(challenge.reviewWord)
     }
 
+    const writingExplanation = writingGrade
+      ? writingGrade.errors
+          .map((error) => {
+            return error.suggestion
+              ? `${error.message} ${error.suggestion}`
+              : error.message
+          })
+          .join('\n')
+      : ''
+
     const result: ChallengeResult = {
       isCorrect,
       userAnswer: answer,
-      correctAnswer: challenge.correctAnswer
-        ?? 'Try writing a longer and clearer answer.',
-      explanation: challenge.explanation,
+      correctAnswer:
+        challenge.correctAnswer ??
+        'Try writing a longer and clearer answer.',
+      explanation: writingGrade
+        ? writingExplanation || challenge.explanation
+        : challenge.explanation,
       xpEarned,
+      writingGrade,
     }
 
     lastResult.value = result

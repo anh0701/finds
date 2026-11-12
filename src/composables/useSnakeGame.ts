@@ -194,17 +194,11 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     if (!head) return
 
     const nextHead: Point = {
-      x: head.x + direction.x,
-      y: head.y + direction.y,
+      x: (head.x + direction.x + GRID_SIZE) % GRID_SIZE,
+      y: (head.y + direction.y + GRID_SIZE) % GRID_SIZE,
     }
 
     const willEat = isSamePoint(nextHead, food.value)
-
-    const hitWall =
-      nextHead.x < 0 ||
-      nextHead.x >= GRID_SIZE ||
-      nextHead.y < 0 ||
-      nextHead.y >= GRID_SIZE
 
     // Nếu không ăn, đuôi sẽ rời vị trí hiện tại trong lượt này.
     const bodyToCheck = willEat
@@ -215,7 +209,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
       isSamePoint(segment, nextHead),
     )
 
-    if (hitWall || hitSelf) {
+    if ( hitSelf) {
       endGame()
       return
     }
