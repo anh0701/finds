@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import {
   CheckCircle2,
@@ -8,13 +7,13 @@ import {
   SpellCheck,
   Target,
   Type,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
-import type { ChallengeResult } from '@/types/learning'
+import type { ChallengeResult } from "@/types/learning";
 
 defineProps<{
-  result: ChallengeResult
-}>()
+  result: ChallengeResult;
+}>();
 </script>
 
 <template>
@@ -34,29 +33,21 @@ defineProps<{
         class="shrink-0 text-emerald-400"
       />
 
-      <XCircle
-        v-else
-        :size="28"
-        class="shrink-0 text-amber-400"
-      />
+      <XCircle v-else :size="28" class="shrink-0 text-amber-400" />
 
       <div>
         <h3
           class="font-bold"
-          :class="
-            result.isCorrect
-              ? 'text-emerald-300'
-              : 'text-amber-300'
-          "
+          :class="result.isCorrect ? 'text-emerald-300' : 'text-amber-300'"
         >
-          {{ result.isCorrect ? 'Excellent work!' : 'Good try!' }}
+          {{ result.isCorrect ? "Excellent work!" : "Good try!" }}
         </h3>
 
         <p class="text-xs text-slate-400">
           {{
             result.isCorrect
               ? `You earned ${result.xpEarned} XP`
-              : 'Your combo has been reset. Keep practicing!'
+              : "Your combo has been reset. Keep practicing!"
           }}
         </p>
       </div>
@@ -65,18 +56,22 @@ defineProps<{
     <div class="space-y-4">
       <!-- User answer -->
       <div>
-        <p class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+        <p
+          class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500"
+        >
           Your answer
         </p>
 
         <p class="break-words text-sm leading-relaxed text-slate-200">
-          {{ result.userAnswer || 'No answer' }}
+          {{ result.userAnswer || "No answer" }}
         </p>
       </div>
 
       <!-- Correct answer -->
       <div v-if="!result.isCorrect && !result.writingGrade">
-        <p class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+        <p
+          class="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500"
+        >
           Correct answer
         </p>
 
@@ -144,13 +139,17 @@ defineProps<{
                 : 'text-amber-300'
             "
           >
-            {{ result.writingGrade.grammarPassed ? 'Good' : 'Needs improvement' }}
+            {{
+              result.writingGrade.grammarPassed ? "Good" : "Needs improvement"
+            }}
           </span>
         </div>
 
         <!-- Required keywords -->
         <div>
-          <p class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+          <p
+            class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500"
+          >
             <Target :size="14" />
             Required words
           </p>
@@ -203,10 +202,7 @@ defineProps<{
           </div>
         </div>
 
-        <p
-          v-else
-          class="text-sm text-emerald-300"
-        >
+        <p v-else class="text-sm text-emerald-300">
           Great! No issues were detected by the current writing checker.
         </p>
       </div>
@@ -216,7 +212,9 @@ defineProps<{
         v-if="!result.writingGrade && result.explanation"
         class="rounded-xl bg-black/20 p-3"
       >
-        <div class="mb-2 flex items-center gap-2 text-xs font-bold text-purple-300">
+        <div
+          class="mb-2 flex items-center gap-2 text-xs font-bold text-purple-300"
+        >
           <Lightbulb :size="15" />
           Explanation
         </div>

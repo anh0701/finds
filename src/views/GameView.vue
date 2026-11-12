@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from "vue";
 
 import {
   Play,
@@ -12,23 +12,23 @@ import {
   Apple,
   BookOpen,
   Pause,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
-import SnakeBoard from '@/components/game/SnakeBoard.vue'
-import SnakeStats from '@/components/game/SnakeStats.vue'
-import SnakeControls from '@/components/game/SnakeControls.vue'
+import SnakeBoard from "@/components/game/SnakeBoard.vue";
+import SnakeStats from "@/components/game/SnakeStats.vue";
+import SnakeControls from "@/components/game/SnakeControls.vue";
 
-import LearningStats from '@/components/learning/LearningStats.vue'
-import ChallengeModal from '@/components/learning/ChallengeModal.vue'
+import LearningStats from "@/components/learning/LearningStats.vue";
+import ChallengeModal from "@/components/learning/ChallengeModal.vue";
 
-import { useSnakeGame } from '@/composables/useSnakeGame'
-import { useLearningEngine } from '@/composables/useLearningEngine'
-import { useLearningStore } from '@/stores/learningStore'
+import { useSnakeGame } from "@/composables/useSnakeGame";
+import { useLearningEngine } from "@/composables/useLearningEngine";
+import { useLearningStore } from "@/stores/learningStore";
 
-const challengeOpen = ref(false)
+const challengeOpen = ref(false);
 
-const learning = useLearningEngine()
-const learningStore = useLearningStore()
+const learning = useLearningEngine();
+const learningStore = useLearningStore();
 
 const {
   currentChallenge,
@@ -60,72 +60,72 @@ const {
 } = useSnakeGame({
   onFoodEaten: handleFoodEaten,
   isInputBlocked: () => challengeOpen.value,
-})
+});
 
 function handleFoodEaten(): void {
-  startChallenge()
-  challengeOpen.value = true
+  startChallenge();
+  challengeOpen.value = true;
 }
 
 function handleSubmitAnswer(answer: string): void {
-  submitAnswer(answer)
+  submitAnswer(answer);
 }
 
 function handleChallengeClose(): void {
-  closeChallenge()
-  challengeOpen.value = false
+  closeChallenge();
+  challengeOpen.value = false;
 
   if (!isGameOver.value && !isWon.value) {
-    startGame()
+    startGame();
   }
 }
 
 function handleRestart(): void {
-  if (challengeOpen.value) return
+  if (challengeOpen.value) return;
 
-  closeChallenge()
-  resetGame()
+  closeChallenge();
+  resetGame();
 }
 
 function handlePlayAgain(): void {
-  if (challengeOpen.value) return
+  if (challengeOpen.value) return;
 
-  closeChallenge()
-  resetGame()
-  startGame()
+  closeChallenge();
+  resetGame();
+  startGame();
 }
 
 function handleStart(): void {
-  if (challengeOpen.value) return
+  if (challengeOpen.value) return;
 
-  startGame()
+  startGame();
 }
 
 function handlePause(): void {
-  if (challengeOpen.value) return
+  if (challengeOpen.value) return;
 
-  pauseGame()
+  pauseGame();
 }
 
 function handleMoveUp(): void {
-  if (!challengeOpen.value) moveUp()
+  if (!challengeOpen.value) moveUp();
 }
 
 function handleMoveDown(): void {
-  if (!challengeOpen.value) moveDown()
+  if (!challengeOpen.value) moveDown();
 }
 
 function handleMoveLeft(): void {
-  if (!challengeOpen.value) moveLeft()
+  if (!challengeOpen.value) moveLeft();
 }
 
 function handleMoveRight(): void {
-  if (!challengeOpen.value) moveRight()
+  if (!challengeOpen.value) moveRight();
 }
 
 onMounted(() => {
-  learningStore.loadProgress()
-})
+  learningStore.loadProgress();
+});
 </script>
 
 <template>
@@ -135,9 +135,13 @@ onMounted(() => {
       <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div class="mb-2 flex items-center gap-2">
-            <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_12px_#39ff88]" />
+            <span
+              class="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_12px_#39ff88]"
+            />
 
-            <span class="text-xs font-bold uppercase tracking-[0.3em] text-emerald-400">
+            <span
+              class="text-xs font-bold uppercase tracking-[0.3em] text-emerald-400"
+            >
               Arcade edition
             </span>
           </div>
@@ -149,13 +153,15 @@ onMounted(() => {
             </span>
           </h1>
 
-          <p class="mt-2 text-sm text-slate-400">
-            Eat. Grow. Survive. Learn.
-          </p>
+          <p class="mt-2 text-sm text-slate-400">Eat. Grow. Survive. Learn.</p>
         </div>
 
-        <div class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur">
-          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div
+          class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur"
+        >
+          <p
+            class="text-xs font-semibold uppercase tracking-wider text-slate-400"
+          >
             Your best
           </p>
 
@@ -169,22 +175,20 @@ onMounted(() => {
       <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <!-- Board -->
         <section class="min-w-0">
-          <div class="relative mx-auto max-w-[600px] rounded-3xl border border-emerald-400/30 bg-[#0d1324] p-2 shadow-[0_0_25px_#39ff8830]">
-            <SnakeBoard
-              :snake="snake"
-              :food="food"
-            />
+          <div
+            class="relative mx-auto max-w-[600px] rounded-3xl border border-emerald-400/30 bg-[#0d1324] p-2 shadow-[0_0_25px_#39ff8830]"
+          >
+            <SnakeBoard :snake="snake" :food="food" />
 
             <!-- Start overlay -->
             <div
               v-if="!isStarted && !isGameOver && !isWon"
               class="absolute inset-2 flex flex-col items-center justify-center rounded-2xl bg-[#080b16]/90 px-4 text-center backdrop-blur-sm"
             >
-              <div class="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-400/30 bg-emerald-400/10 shadow-[0_0_30px_#39ff8830]">
-                <Gamepad2
-                  :size="42"
-                  class="text-emerald-400"
-                />
+              <div
+                class="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-400/30 bg-emerald-400/10 shadow-[0_0_30px_#39ff8830]"
+              >
+                <Gamepad2 :size="42" class="text-emerald-400" />
               </div>
 
               <h2 class="text-3xl font-black">
@@ -212,17 +216,18 @@ onMounted(() => {
 
             <!-- Pause overlay -->
             <div
-              v-else-if="isStarted && !isPlaying && !isGameOver && !isWon && !challengeOpen"
+              v-else-if="
+                isStarted &&
+                !isPlaying &&
+                !isGameOver &&
+                !isWon &&
+                !challengeOpen
+              "
               class="absolute inset-2 flex flex-col items-center justify-center rounded-2xl bg-[#080b16]/85 backdrop-blur-sm"
             >
-              <Pause
-                :size="38"
-                class="text-yellow-300"
-              />
+              <Pause :size="38" class="text-yellow-300" />
 
-              <h2 class="mt-3 text-3xl font-black text-yellow-300">
-                PAUSED
-              </h2>
+              <h2 class="mt-3 text-3xl font-black text-yellow-300">PAUSED</h2>
 
               <button
                 type="button"
@@ -246,29 +251,19 @@ onMounted(() => {
                     : 'border-pink-400/30 bg-pink-400/10'
                 "
               >
-                <Crown
-                  v-if="isWon"
-                  :size="42"
-                  class="text-yellow-400"
-                />
+                <Crown v-if="isWon" :size="42" class="text-yellow-400" />
 
-                <Skull
-                  v-else
-                  :size="42"
-                  class="text-pink-400"
-                />
+                <Skull v-else :size="42" class="text-pink-400" />
               </div>
 
               <h2
                 class="text-3xl font-black"
                 :class="isWon ? 'text-yellow-300' : 'text-pink-400'"
               >
-                {{ isWon ? 'YOU WIN!' : 'GAME OVER' }}
+                {{ isWon ? "YOU WIN!" : "GAME OVER" }}
               </h2>
 
-              <p class="mt-2 text-slate-300">
-                Final score: {{ score }}
-              </p>
+              <p class="mt-2 text-slate-300">Final score: {{ score }}</p>
 
               <button
                 type="button"
@@ -292,13 +287,13 @@ onMounted(() => {
           />
 
           <LearningStats
-  :xp="stats.xp"
-  :stars="stats.stars"
-  :combo="stats.combo"
-  :accuracy="stats.accuracy"
-  :learned-words="stats.learnedWords"
-  :review-words="stats.reviewWords"
-/>
+            :xp="stats.xp"
+            :stars="stats.stars"
+            :combo="stats.combo"
+            :accuracy="stats.accuracy"
+            :learned-words="stats.learnedWords"
+            :review-words="stats.reviewWords"
+          />
 
           <SnakeControls
             :is-playing="isPlaying"
@@ -313,66 +308,55 @@ onMounted(() => {
 
           <section class="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div class="mb-4 flex items-center gap-2">
-              <Keyboard
-                :size="18"
-                class="text-emerald-400"
-              />
+              <Keyboard :size="18" class="text-emerald-400" />
 
-              <h3 class="text-sm font-bold uppercase tracking-widest text-slate-300">
+              <h3
+                class="text-sm font-bold uppercase tracking-widest text-slate-300"
+              >
                 How to play
               </h3>
             </div>
 
             <div class="space-y-4 text-sm text-slate-400">
               <div class="flex items-center gap-3">
-                <Apple
-                  :size="17"
-                  class="shrink-0 text-pink-400"
-                />
+                <Apple :size="17" class="shrink-0 text-pink-400" />
                 <span>Eat food to gain 10 points and start a challenge.</span>
               </div>
 
               <div class="flex items-center gap-3">
-                <Trophy
-                  :size="17"
-                  class="shrink-0 text-yellow-400"
-                />
+                <Trophy :size="17" class="shrink-0 text-yellow-400" />
                 <span>Every 50 points increases your level.</span>
               </div>
 
               <div class="flex items-center gap-3">
-                <Keyboard
-                  :size="17"
-                  class="shrink-0 text-sky-400"
-                />
+                <Keyboard :size="17" class="shrink-0 text-sky-400" />
                 <span>Move with WASD or arrow keys.</span>
               </div>
 
               <div class="flex items-center gap-3">
-                <Pause
-                  :size="17"
-                  class="shrink-0 text-purple-400"
-                />
+                <Pause :size="17" class="shrink-0 text-purple-400" />
                 <span>Press Space to pause or resume.</span>
               </div>
 
               <div class="flex items-center gap-3">
-                <BookOpen
-                  :size="17"
-                  class="shrink-0 text-purple-300"
-                />
+                <BookOpen :size="17" class="shrink-0 text-purple-300" />
                 <span>Answer English questions to earn XP and stars.</span>
               </div>
             </div>
           </section>
 
-          <section class="rounded-2xl border border-purple-400/20 bg-purple-400/5 p-4">
-            <p class="mb-1 text-xs font-bold uppercase tracking-widest text-purple-300">
+          <section
+            class="rounded-2xl border border-purple-400/20 bg-purple-400/5 p-4"
+          >
+            <p
+              class="mb-1 text-xs font-bold uppercase tracking-widest text-purple-300"
+            >
               Pro tip
             </p>
 
             <p class="text-sm text-slate-400">
-              Plan your route ahead. The higher your level, the faster the snake gets!
+              Plan your route ahead. The higher your level, the faster the snake
+              gets!
             </p>
           </section>
         </aside>
@@ -385,11 +369,11 @@ onMounted(() => {
 
     <!-- Learning challenge -->
     <ChallengeModal
-  v-if="challengeOpen && currentChallenge"
-  :challenge="currentChallenge"
-  :result="lastResult"
-  @submit="handleSubmitAnswer"
-  @close="handleChallengeClose"
-/>
+      v-if="challengeOpen && currentChallenge"
+      :challenge="currentChallenge"
+      :result="lastResult"
+      @submit="handleSubmitAnswer"
+      @close="handleChallengeClose"
+    />
   </main>
 </template>

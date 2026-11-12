@@ -1,22 +1,19 @@
-import { computed, ref } from 'vue'
-import { useAdaptiveLearning } from '@/composables/useAdaptiveLearning'
-import { useLearningStore } from '@/stores/learningStore'
-import { gradeWriting } from '@/services/writingGrader'
-import type {
-  Challenge,
-  ChallengeResult,
-} from '@/types/learning'
+import { computed, ref } from "vue";
+import { useAdaptiveLearning } from "@/composables/useAdaptiveLearning";
+import { useLearningStore } from "@/stores/learningStore";
+import { gradeWriting } from "@/services/writingGrader";
+import type { Challenge, ChallengeResult } from "@/types/learning";
 
 function normalizeAnswer(value: string): string {
-  return value.trim().toLowerCase()
+  return value.trim().toLowerCase();
 }
 
 export function useLearningEngine() {
-  const store = useLearningStore()
-  const adaptive = useAdaptiveLearning()
+  const store = useLearningStore();
+  const adaptive = useAdaptiveLearning();
 
-  const currentChallenge = ref<Challenge | null>(null)
-  const lastResult = ref<ChallengeResult | null>(null)
+  const currentChallenge = ref<Challenge | null>(null);
+  const lastResult = ref<ChallengeResult | null>(null);
 
   const stats = computed(() => ({
     xp: store.state.xp,
@@ -25,46 +22,43 @@ export function useLearningEngine() {
     accuracy: store.accuracy.value,
     learnedWords: store.state.learnedWords.length,
     reviewWords: store.state.reviewQueue.length,
-  }))
+  }));
 
   function startChallenge(): Challenge {
-    currentChallenge.value = adaptive.chooseChallenge()
-    lastResult.value = null
+    currentChallenge.value = adaptive.chooseChallenge();
+    lastResult.value = null;
 
-    return currentChallenge.value
+    return currentChallenge.value;
   }
 
   function submitAnswer(answer: string): ChallengeResult | null {
-    const challenge = currentChallenge.value
+    const challenge = currentChallenge.value;
 
     if (!challenge || lastResult.value) {
-      return null
+      return null;
     }
 
-    let isCorrect = false
-    let writingGrade: ChallengeResult['writingGrade']
+    let isCorrect = false;
+    let writingGrade: ChallengeResult["writingGrade"];
 
-    if (challenge.type === 'multiple-choice') {
+    if (challenge.type === "multiple-choice") {
       isCorrect =
         normalizeAnswer(answer) ===
-        normalizeAnswer(challenge.correctAnswer ?? '')
+        normalizeAnswer(challenge.correctAnswer ?? "");
     } else {
-      writingGrade = gradeWriting(challenge, answer)
-      isCorrect = writingGrade.passed
+      writingGrade = gradeWriting(challenge, answer);
+      isCorrect = writingGrade.passed;
     }
 
-    const xpEarned = store.recordAttempt(
-      challenge.skill,
-      isCorrect,
-    )
+    const xpEarned = store.recordAttempt(challenge.skill, isCorrect);
 
     if (isCorrect && challenge.reviewWord) {
-      store.addLearnedWord(challenge.reviewWord)
-      store.removeReviewWord(challenge.reviewWord)
+      store.addLearnedWord(challenge.reviewWord);
+      store.removeReviewWord(challenge.reviewWord);
     }
 
     if (!isCorrect && challenge.reviewWord) {
-      store.addReviewWord(challenge.reviewWord)
+      store.addReviewWord(challenge.reviewWord);
     }
 
     const writingExplanation = writingGrade
@@ -72,32 +66,31 @@ export function useLearningEngine() {
           .map((error) => {
             return error.suggestion
               ? `${error.message} ${error.suggestion}`
-              : error.message
+              : error.message;
           })
-          .join('\n')
-      : ''
+          .join("\n")
+      : "";
 
     const result: ChallengeResult = {
       isCorrect,
       userAnswer: answer,
       correctAnswer:
-        challenge.correctAnswer ??
-        'Try writing a longer and clearer answer.',
+        challenge.correctAnswer ?? "Try writing a longer and clearer answer.",
       explanation: writingGrade
         ? writingExplanation || challenge.explanation
         : challenge.explanation,
       xpEarned,
       writingGrade,
-    }
+    };
 
-    lastResult.value = result
+    lastResult.value = result;
 
-    return result
+    return result;
   }
 
   function closeChallenge(): void {
-    currentChallenge.value = null
-    lastResult.value = null
+    currentChallenge.value = null;
+    lastResult.value = null;
   }
 
   return {
@@ -108,5 +101,5 @@ export function useLearningEngine() {
     startChallenge,
     submitAnswer,
     closeChallenge,
-  }
+  };
 }

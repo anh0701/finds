@@ -1,20 +1,14 @@
 <script setup lang="ts">
-import {
-  BookOpen,
-  Flame,
-  Star,
-  Target,
-  Zap,
-} from 'lucide-vue-next'
+import { BookOpen, Flame, Star, Target, Zap } from "lucide-vue-next";
 
 defineProps<{
-  xp: number
-  stars: number
-  combo: number
-  accuracy: number
-  learnedWords: number
-  reviewWords: number
-}>()
+  xp: number;
+  stars: number;
+  combo: number;
+  accuracy: number;
+  learnedWords: number;
+  reviewWords: number;
+}>();
 </script>
 
 <template>
@@ -62,9 +56,7 @@ defineProps<{
           <Target :size="14" class="text-emerald-300" />
           Accuracy
         </div>
-        <p class="mt-2 text-2xl font-black text-emerald-300">
-          {{ accuracy }}%
-        </p>
+        <p class="mt-2 text-2xl font-black text-emerald-300">{{ accuracy }}%</p>
       </article>
     </div>
 

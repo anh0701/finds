@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const model = defineModel<string>({ default: '' })
+const model = defineModel<string>({ default: "" });
 
 defineProps<{
-  options: string[]
-  disabled?: boolean
-}>()
+  options: string[];
+  disabled?: boolean;
+}>();
 </script>
 
 <template>

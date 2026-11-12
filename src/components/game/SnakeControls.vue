@@ -7,27 +7,29 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
 defineProps<{
-  isPlaying: boolean
-}>()
+  isPlaying: boolean;
+}>();
 
 const emit = defineEmits<{
-  start: []
-  pause: []
-  restart: []
-  up: []
-  down: []
-  left: []
-  right: []
-}>()
+  start: [];
+  pause: [];
+  restart: [];
+  up: [];
+  down: [];
+  left: [];
+  right: [];
+}>();
 </script>
 
 <template>
   <section class="space-y-4">
     <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <h3 class="mb-4 text-sm font-bold uppercase tracking-widest text-slate-300">
+      <h3
+        class="mb-4 text-sm font-bold uppercase tracking-widest text-slate-300"
+      >
         Game controls
       </h3>
 
@@ -62,7 +64,9 @@ const emit = defineEmits<{
     </div>
 
     <div class="rounded-2xl border border-white/10 bg-white/5 p-5 lg:hidden">
-      <h3 class="mb-4 text-sm font-bold uppercase tracking-widest text-slate-300">
+      <h3
+        class="mb-4 text-sm font-bold uppercase tracking-widest text-slate-300"
+      >
         Touch controls
       </h3>
 

@@ -1,48 +1,47 @@
-
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import { Lightbulb, Mic, Send } from 'lucide-vue-next'
+import { computed, nextTick, ref, watch } from "vue";
+import { Lightbulb, Mic, Send } from "lucide-vue-next";
 
-const answer = defineModel<string>({ default: '' })
+const answer = defineModel<string>({ default: "" });
 
 const props = withDefaults(
   defineProps<{
-    minWords: number
-    keywords: string[]
-    disabled?: boolean
+    minWords: number;
+    keywords: string[];
+    disabled?: boolean;
   }>(),
   {
     disabled: false,
   },
-)
+);
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 const wordCount = computed(() => {
-  return answer.value.trim().split(/\s+/).filter(Boolean).length
-})
+  return answer.value.trim().split(/\s+/).filter(Boolean).length;
+});
 
 const remainingWords = computed(() => {
-  return Math.max(0, props.minWords - wordCount.value)
-})
+  return Math.max(0, props.minWords - wordCount.value);
+});
 
 const canSubmit = computed(() => {
-  return wordCount.value >= props.minWords && !props.disabled
-})
+  return wordCount.value >= props.minWords && !props.disabled;
+});
 
 const emit = defineEmits<{
-  submit: []
-}>()
+  submit: [];
+}>();
 
 function submitAnswer() {
-  if (!canSubmit.value) return
-  emit('submit')
+  if (!canSubmit.value) return;
+  emit("submit");
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Enter' && !event.ctrlKey && !event.shiftKey) {
-    event.preventDefault()
-    submitAnswer()
+  if (event.key === "Enter" && !event.ctrlKey && !event.shiftKey) {
+    event.preventDefault();
+    submitAnswer();
   }
 }
 
@@ -50,20 +49,18 @@ watch(
   () => props.disabled,
   async (disabled) => {
     if (!disabled) {
-      await nextTick()
-      textareaRef.value?.focus()
+      await nextTick();
+      textareaRef.value?.focus();
     }
   },
   { immediate: true },
-)
+);
 </script>
 
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between gap-3">
-      <p class="text-sm font-medium text-slate-300">
-        Your answer
-      </p>
+      <p class="text-sm font-medium text-slate-300">Your answer</p>
 
       <span class="text-xs text-slate-400">
         {{ wordCount }} / {{ minWords }} words
@@ -88,9 +85,7 @@ watch(
         <template v-if="remainingWords > 0">
           {{ remainingWords }} more words needed
         </template>
-        <template v-else>
-          Minimum word count reached
-        </template>
+        <template v-else> Minimum word count reached </template>
       </p>
 
       <span class="flex items-center gap-1 text-xs text-slate-400">
@@ -100,7 +95,9 @@ watch(
     </div>
 
     <div class="rounded-lg bg-slate-800/70 p-3">
-      <div class="mb-1 flex items-center gap-2 text-xs font-medium text-cyan-300">
+      <div
+        class="mb-1 flex items-center gap-2 text-xs font-medium text-cyan-300"
+      >
         <Lightbulb class="h-4 w-4" />
         Writing tips
       </div>
@@ -108,11 +105,9 @@ watch(
       <p class="text-xs text-slate-400">
         Write at least {{ minWords }} words.
         <template v-if="keywords.length">
-          Required keywords: {{ keywords.join(', ') }}
+          Required keywords: {{ keywords.join(", ") }}
         </template>
-        <template v-else>
-          No required keywords.
-        </template>
+        <template v-else> No required keywords. </template>
       </p>
     </div>
 

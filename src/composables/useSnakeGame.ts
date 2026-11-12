@@ -1,35 +1,30 @@
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-} from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 export interface Point {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 export interface SnakeGameOptions {
-  onFoodEaten?: (score: number) => void
-  isInputBlocked?: () => boolean
+  onFoodEaten?: (score: number) => void;
+  isInputBlocked?: () => boolean;
 }
 
-const GRID_SIZE = 20
-const INITIAL_SPEED = 250
-const MIN_SPEED = 65
-const SPEED_STEP = 12
-const SCORE_PER_FOOD = 10
-const SCORE_PER_LEVEL = 50
-const STORAGE_KEY = 'snake-best'
+const GRID_SIZE = 20;
+const INITIAL_SPEED = 250;
+const MIN_SPEED = 65;
+const SPEED_STEP = 12;
+const SCORE_PER_FOOD = 10;
+const SCORE_PER_LEVEL = 50;
+const STORAGE_KEY = "snake-best";
 
 const INITIAL_SNAKE: Point[] = [
   { x: 9, y: 10 },
   { x: 8, y: 10 },
   { x: 7, y: 10 },
-]
+];
 
-const INITIAL_DIRECTION: Point = { x: 1, y: 0 }
+const INITIAL_DIRECTION: Point = { x: 1, y: 0 };
 
 const KEY_DIRECTIONS: Record<string, Point> = {
   arrowup: { x: 0, y: -1 },
@@ -40,317 +35,300 @@ const KEY_DIRECTIONS: Record<string, Point> = {
   a: { x: -1, y: 0 },
   arrowright: { x: 1, y: 0 },
   d: { x: 1, y: 0 },
-}
+};
 
 function isSamePoint(a: Point, b: Point): boolean {
-  return a.x === b.x && a.y === b.y
+  return a.x === b.x && a.y === b.y;
 }
 
 function createSnake(): Point[] {
-  return INITIAL_SNAKE.map((segment) => ({ ...segment }))
+  return INITIAL_SNAKE.map((segment) => ({ ...segment }));
 }
 
 function createFood(snake: Point[]): Point {
-  const availableCells: Point[] = []
+  const availableCells: Point[] = [];
 
   for (let y = 0; y < GRID_SIZE; y += 1) {
     for (let x = 0; x < GRID_SIZE; x += 1) {
-      const occupied = snake.some((segment) =>
-        segment.x === x && segment.y === y,
-      )
+      const occupied = snake.some(
+        (segment) => segment.x === x && segment.y === y,
+      );
 
       if (!occupied) {
-        availableCells.push({ x, y })
+        availableCells.push({ x, y });
       }
     }
   }
 
   if (availableCells.length === 0) {
-    return { x: -1, y: -1 }
+    return { x: -1, y: -1 };
   }
 
-  const randomIndex = Math.floor(
-    Math.random() * availableCells.length,
-  )
+  const randomIndex = Math.floor(Math.random() * availableCells.length);
 
-  return availableCells[randomIndex] ?? { x: -1, y: -1 }
+  return availableCells[randomIndex] ?? { x: -1, y: -1 };
 }
 
 function readBestScore(): number {
   try {
-    return Number(window.localStorage.getItem(STORAGE_KEY)) || 0
+    return Number(window.localStorage.getItem(STORAGE_KEY)) || 0;
   } catch {
-    return 0
+    return 0;
   }
 }
 
 export function useSnakeGame(options: SnakeGameOptions = {}) {
-  const snake = ref<Point[]>(createSnake())
-  const food = ref<Point>(createFood(snake.value))
+  const snake = ref<Point[]>(createSnake());
+  const food = ref<Point>(createFood(snake.value));
 
-  const score = ref(0)
-  const bestScore = ref(0)
+  const score = ref(0);
+  const bestScore = ref(0);
 
-  const isPlaying = ref(false)
-  const isStarted = ref(false)
-  const isGameOver = ref(false)
-  const isWon = ref(false)
+  const isPlaying = ref(false);
+  const isStarted = ref(false);
+  const isGameOver = ref(false);
+  const isWon = ref(false);
 
-  let direction: Point = { ...INITIAL_DIRECTION }
-  let nextDirection: Point = { ...INITIAL_DIRECTION }
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let direction: Point = { ...INITIAL_DIRECTION };
+  let nextDirection: Point = { ...INITIAL_DIRECTION };
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const level = computed(() =>
-    Math.floor(score.value / SCORE_PER_LEVEL) + 1,
-  )
+  const level = computed(() => Math.floor(score.value / SCORE_PER_LEVEL) + 1);
 
   const speed = computed(() =>
-    Math.max(
-      MIN_SPEED,
-      INITIAL_SPEED - (level.value - 1) * SPEED_STEP,
-    ),
-  )
+    Math.max(MIN_SPEED, INITIAL_SPEED - (level.value - 1) * SPEED_STEP),
+  );
 
   const speedMultiplier = computed(() =>
     (INITIAL_SPEED / speed.value).toFixed(1),
-  )
+  );
 
   function stopTimer(): void {
     if (timer !== undefined) {
-      clearTimeout(timer)
-      timer = undefined
+      clearTimeout(timer);
+      timer = undefined;
     }
   }
 
   function saveBestScore(): void {
-    if (score.value <= bestScore.value) return
+    if (score.value <= bestScore.value) return;
 
-    bestScore.value = score.value
+    bestScore.value = score.value;
 
     try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        String(bestScore.value),
-      )
+      window.localStorage.setItem(STORAGE_KEY, String(bestScore.value));
     } catch {
       // Game vẫn hoạt động nếu trình duyệt không cho phép localStorage.
     }
   }
 
   function resetGame(): void {
-    stopTimer()
+    stopTimer();
 
-    snake.value = createSnake()
-    food.value = createFood(snake.value)
+    snake.value = createSnake();
+    food.value = createFood(snake.value);
 
-    score.value = 0
-    direction = { ...INITIAL_DIRECTION }
-    nextDirection = { ...INITIAL_DIRECTION }
+    score.value = 0;
+    direction = { ...INITIAL_DIRECTION };
+    nextDirection = { ...INITIAL_DIRECTION };
 
-    isPlaying.value = false
-    isStarted.value = false
-    isGameOver.value = false
-    isWon.value = false
+    isPlaying.value = false;
+    isStarted.value = false;
+    isGameOver.value = false;
+    isWon.value = false;
   }
 
   function endGame(won = false): void {
-    stopTimer()
+    stopTimer();
 
-    isPlaying.value = false
-    isGameOver.value = !won
-    isWon.value = won
+    isPlaying.value = false;
+    isGameOver.value = !won;
+    isWon.value = won;
 
-    saveBestScore()
+    saveBestScore();
   }
 
   function pauseGame(): void {
-    if (!isPlaying.value) return
+    if (!isPlaying.value) return;
 
-    isPlaying.value = false
-    stopTimer()
+    isPlaying.value = false;
+    stopTimer();
   }
 
   function changeDirection(next: Point): void {
-    if (!isPlaying.value) return
+    if (!isPlaying.value) return;
 
     // Không cho rắn quay ngược 180 độ.
-    if (
-      next.x === -direction.x &&
-      next.y === -direction.y
-    ) {
-      return
+    if (next.x === -direction.x && next.y === -direction.y) {
+      return;
     }
 
-    nextDirection = next
+    nextDirection = next;
   }
 
   function move(): void {
-    if (!isPlaying.value) return
+    if (!isPlaying.value) return;
 
-    direction = nextDirection
+    direction = nextDirection;
 
-    const head = snake.value[0]
+    const head = snake.value[0];
 
-    if (!head) return
+    if (!head) return;
 
     const nextHead: Point = {
       x: (head.x + direction.x + GRID_SIZE) % GRID_SIZE,
       y: (head.y + direction.y + GRID_SIZE) % GRID_SIZE,
-    }
+    };
 
-    const willEat = isSamePoint(nextHead, food.value)
+    const willEat = isSamePoint(nextHead, food.value);
 
     // Nếu không ăn, đuôi sẽ rời vị trí hiện tại trong lượt này.
-    const bodyToCheck = willEat
-      ? snake.value
-      : snake.value.slice(0, -1)
+    const bodyToCheck = willEat ? snake.value : snake.value.slice(0, -1);
 
     const hitSelf = bodyToCheck.some((segment) =>
       isSamePoint(segment, nextHead),
-    )
+    );
 
-    if ( hitSelf) {
-      endGame()
-      return
+    if (hitSelf) {
+      endGame();
+      return;
     }
 
-    const nextSnake = [nextHead, ...snake.value]
+    const nextSnake = [nextHead, ...snake.value];
 
     if (willEat) {
-      score.value += SCORE_PER_FOOD
-      saveBestScore()
+      score.value += SCORE_PER_FOOD;
+      saveBestScore();
 
       if (nextSnake.length >= GRID_SIZE * GRID_SIZE) {
-        snake.value = nextSnake
-        endGame(true)
-        return
+        snake.value = nextSnake;
+        endGame(true);
+        return;
       }
 
-      food.value = createFood(nextSnake)
-      snake.value = nextSnake
+      food.value = createFood(nextSnake);
+      snake.value = nextSnake;
 
       // Tạm dừng để mở thử thách học tiếng Anh.
-      stopTimer()
-      isPlaying.value = false
+      stopTimer();
+      isPlaying.value = false;
 
-      options.onFoodEaten?.(score.value)
-      return
+      options.onFoodEaten?.(score.value);
+      return;
     }
 
-    nextSnake.pop()
-    snake.value = nextSnake
+    nextSnake.pop();
+    snake.value = nextSnake;
 
-    timer = setTimeout(move, speed.value)
+    timer = setTimeout(move, speed.value);
   }
 
   function startGame(): void {
-    if (isPlaying.value) return
+    if (isPlaying.value) return;
 
     if (isGameOver.value || isWon.value) {
-      resetGame()
+      resetGame();
     }
 
-    isStarted.value = true
-    isPlaying.value = true
+    isStarted.value = true;
+    isPlaying.value = true;
 
-    stopTimer()
-    timer = setTimeout(move, speed.value)
+    stopTimer();
+    timer = setTimeout(move, speed.value);
   }
 
   function toggleGame(): void {
     if (isPlaying.value) {
-      pauseGame()
-      return
+      pauseGame();
+      return;
     }
 
-    startGame()
+    startGame();
   }
 
   function handleKeydown(event: KeyboardEvent): void {
-    const target = event.target
+    const target = event.target;
 
     if (
       target instanceof HTMLElement &&
-      (
-        target.isContentEditable ||
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT'
-      )
+      (target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT")
     ) {
-      return
+      return;
     }
 
     if (options.isInputBlocked?.()) {
       const blockedKeys = [
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight',
-        ' ',
-        'w',
-        'a',
-        's',
-        'd',
-      ]
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        " ",
+        "w",
+        "a",
+        "s",
+        "d",
+      ];
 
       if (blockedKeys.includes(event.key.toLowerCase())) {
-        event.preventDefault()
+        event.preventDefault();
       }
 
-      return
+      return;
     }
 
-    const key = event.key.toLowerCase()
+    const key = event.key.toLowerCase();
 
     if (options.isInputBlocked?.()) {
-      if (key in KEY_DIRECTIONS || key === ' ') {
-        event.preventDefault()
+      if (key in KEY_DIRECTIONS || key === " ") {
+        event.preventDefault();
       }
 
-      return
+      return;
     }
 
-    const next = KEY_DIRECTIONS[key]
+    const next = KEY_DIRECTIONS[key];
 
     if (next) {
-      event.preventDefault()
-      changeDirection(next)
-      return
+      event.preventDefault();
+      changeDirection(next);
+      return;
     }
 
-    if (key === ' ' && !event.repeat) {
-      event.preventDefault()
-      toggleGame()
+    if (key === " " && !event.repeat) {
+      event.preventDefault();
+      toggleGame();
     }
   }
 
   function moveUp(): void {
-    changeDirection({ x: 0, y: -1 })
+    changeDirection({ x: 0, y: -1 });
   }
 
   function moveDown(): void {
-    changeDirection({ x: 0, y: 1 })
+    changeDirection({ x: 0, y: 1 });
   }
 
   function moveLeft(): void {
-    changeDirection({ x: -1, y: 0 })
+    changeDirection({ x: -1, y: 0 });
   }
 
   function moveRight(): void {
-    changeDirection({ x: 1, y: 0 })
+    changeDirection({ x: 1, y: 0 });
   }
 
   onMounted(() => {
-    bestScore.value = readBestScore()
+    bestScore.value = readBestScore();
 
-    window.addEventListener('keydown', handleKeydown)
-  })
+    window.addEventListener("keydown", handleKeydown);
+  });
 
   onBeforeUnmount(() => {
-    stopTimer()
-    window.removeEventListener('keydown', handleKeydown)
-  })
+    stopTimer();
+    window.removeEventListener("keydown", handleKeydown);
+  });
 
   return {
     snake,
@@ -372,5 +350,5 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     moveDown,
     moveLeft,
     moveRight,
-  }
+  };
 }
