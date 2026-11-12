@@ -14,7 +14,9 @@ const GRID_SIZE = 20;
 const INITIAL_SPEED = 250;
 const MIN_SPEED = 65;
 const SPEED_STEP = 12;
-const SCORE_PER_FOOD = 10;
+
+export const SCORE_PER_FOOD = 10;
+
 const SCORE_PER_LEVEL = 50;
 const STORAGE_KEY = "snake-best";
 
@@ -118,8 +120,15 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     try {
       window.localStorage.setItem(STORAGE_KEY, String(bestScore.value));
     } catch {
-      // Game vẫn hoạt động nếu trình duyệt không cho phép localStorage.
+      // Game vẫn hoạt động nếu không thể sử dụng localStorage.
     }
+  }
+
+  function addScore(points: number = SCORE_PER_FOOD): void {
+    if (points <= 0 || isGameOver.value || isWon.value) return;
+
+    score.value += points;
+    saveBestScore();
   }
 
   function resetGame(): void {
@@ -158,7 +167,6 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
   function changeDirection(next: Point): void {
     if (!isPlaying.value) return;
 
-    // Không cho rắn quay ngược 180 độ.
     if (next.x === -direction.x && next.y === -direction.y) {
       return;
     }
@@ -182,7 +190,6 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     const willEat = isSamePoint(nextHead, food.value);
 
-    // Nếu không ăn, đuôi sẽ rời vị trí hiện tại trong lượt này.
     const bodyToCheck = willEat ? snake.value : snake.value.slice(0, -1);
 
     const hitSelf = bodyToCheck.some((segment) =>
@@ -197,9 +204,6 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     const nextSnake = [nextHead, ...snake.value];
 
     if (willEat) {
-      score.value += SCORE_PER_FOOD;
-      saveBestScore();
-
       if (nextSnake.length >= GRID_SIZE * GRID_SIZE) {
         snake.value = nextSnake;
         endGame(true);
@@ -209,11 +213,14 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
       food.value = createFood(nextSnake);
       snake.value = nextSnake;
 
-      // Tạm dừng để mở thử thách học tiếng Anh.
+      // Tạm dừng game để người chơi làm thử thách.
       stopTimer();
       isPlaying.value = false;
 
+      // Chưa cộng điểm. View sẽ quyết định cộng điểm
+      // sau khi nhận được kết quả trả lời đúng.
       options.onFoodEaten?.(score.value);
+
       return;
     }
 
@@ -260,19 +267,11 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     }
 
     if (options.isInputBlocked?.()) {
-      const blockedKeys = [
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-        " ",
-        "w",
-        "a",
-        "s",
-        "d",
-      ];
-
-      if (blockedKeys.includes(event.key.toLowerCase())) {
+      if (
+        event.key in KEY_DIRECTIONS ||
+        event.key.toLowerCase() in KEY_DIRECTIONS ||
+        event.key === " "
+      ) {
         event.preventDefault();
       }
 
@@ -280,15 +279,6 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     }
 
     const key = event.key.toLowerCase();
-
-    if (options.isInputBlocked?.()) {
-      if (key in KEY_DIRECTIONS || key === " ") {
-        event.preventDefault();
-      }
-
-      return;
-    }
-
     const next = KEY_DIRECTIONS[key];
 
     if (next) {
@@ -321,7 +311,6 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
   onMounted(() => {
     bestScore.value = readBestScore();
-
     window.addEventListener("keydown", handleKeydown);
   });
 
@@ -342,6 +331,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     isStarted,
     isGameOver,
     isWon,
+    addScore,
     startGame,
     pauseGame,
     toggleGame,

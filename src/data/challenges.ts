@@ -9,6 +9,9 @@ export const SKILLS: LearningSkill[] = [
 ];
 
 export const CHALLENGES: Challenge[] = [
+  // =========================
+  // VOCABULARY
+  // =========================
   {
     id: "vocabulary-001",
     skill: "vocabulary",
@@ -24,7 +27,8 @@ export const CHALLENGES: Challenge[] = [
       "Extremely old",
     ],
     correctAnswer: "Having plenty of space",
-    explanation: '"Spacious" means having a lot of room or space.',
+    explanation:
+      '"Spacious" means having a lot of room or space. It is often used to describe large rooms, houses, or buildings.',
     reviewWord: "spacious",
   },
   {
@@ -42,7 +46,8 @@ export const CHALLENGES: Challenge[] = [
       "Extremely tired",
     ],
     correctAnswer: "Unwilling or hesitant",
-    explanation: '"Reluctant" means unwilling or hesitant.',
+    explanation:
+      '"Reluctant" means not willing or not wanting to do something. For example: She was reluctant to speak in front of the class.',
     reviewWord: "reluctant",
   },
   {
@@ -60,9 +65,14 @@ export const CHALLENGES: Challenge[] = [
       "Likely to disappear",
     ],
     correctAnswer: "Certain to happen",
-    explanation: '"Inevitable" means certain to happen.',
+    explanation:
+      '"Inevitable" describes something that is certain to happen and cannot be avoided. Example: Change is inevitable.',
     reviewWord: "inevitable",
   },
+
+  // =========================
+  // GRAMMAR
+  // =========================
   {
     id: "grammar-001",
     skill: "grammar",
@@ -73,7 +83,8 @@ export const CHALLENGES: Challenge[] = [
     question: "I have lived here _____ 2020.",
     options: ["for", "since", "during", "from"],
     correctAnswer: "since",
-    explanation: 'Use "since" with a starting point in time.',
+    explanation:
+      'Use "since" with a starting point in time, such as 2020, Monday, or last year. Use "for" with a duration, such as two years.',
   },
   {
     id: "grammar-002",
@@ -91,7 +102,7 @@ export const CHALLENGES: Challenge[] = [
     ],
     correctAnswer: "If I were rich, I would travel.",
     explanation:
-      "The second conditional uses If + past simple, would + base verb.",
+      'The second conditional describes an imaginary or unlikely situation. Its structure is: If + past simple, would + base verb. "Were" is commonly used with all subjects in hypothetical statements.',
   },
   {
     id: "grammar-003",
@@ -109,8 +120,12 @@ export const CHALLENGES: Challenge[] = [
     ],
     correctAnswer: "had already started",
     explanation:
-      "Use past perfect for an action completed before another past action.",
+      "Use the past perfect (had + past participle) for an action completed before another action in the past. The movie started before we arrived.",
   },
+
+  // =========================
+  // READING
+  // =========================
   {
     id: "reading-001",
     skill: "reading",
@@ -128,7 +143,7 @@ export const CHALLENGES: Challenge[] = [
     ],
     correctAnswer: "The weather is beautiful.",
     explanation:
-      "The passage says Mia is walking because the weather is beautiful.",
+      'The passage directly states that Mia is walking because the weather is beautiful. Look for the reason introduced by "because".',
   },
   {
     id: "reading-002",
@@ -146,8 +161,13 @@ export const CHALLENGES: Challenge[] = [
       "Tom forgot about his plan.",
     ],
     correctAnswer: "The weather affected Tom’s decision.",
-    explanation: "The rain caused Tom to change his original plan.",
+    explanation:
+      "We can infer that the heavy rain changed Tom’s original plan. The passage does not say that he dislikes museums or forgot about the visit.",
   },
+
+  // =========================
+  // LISTENING
+  // =========================
   {
     id: "listening-001",
     skill: "listening",
@@ -157,6 +177,7 @@ export const CHALLENGES: Challenge[] = [
     instruction: "Listen and choose the meaning.",
     question: "What does the speaker mean?",
     audioText: "Could you give me a hand?",
+    transcript: "Could you give me a hand?",
     options: [
       "Can you help me?",
       "Can you leave me alone?",
@@ -164,7 +185,8 @@ export const CHALLENGES: Challenge[] = [
       "Can you wait for me?",
     ],
     correctAnswer: "Can you help me?",
-    explanation: '"Give me a hand" means "help me".',
+    explanation:
+      '"Give me a hand" is a common English idiom meaning "help me". It is often used when asking someone for assistance.',
   },
   {
     id: "listening-002",
@@ -175,6 +197,7 @@ export const CHALLENGES: Challenge[] = [
     instruction: "Listen and choose the meaning.",
     question: "What does the speaker mean?",
     audioText: "I am feeling under the weather.",
+    transcript: "I am feeling under the weather.",
     options: [
       "The speaker is very busy.",
       "The speaker is feeling slightly ill.",
@@ -182,8 +205,13 @@ export const CHALLENGES: Challenge[] = [
       "The speaker has finished working.",
     ],
     correctAnswer: "The speaker is feeling slightly ill.",
-    explanation: '"Under the weather" means feeling slightly ill.',
+    explanation:
+      '"Under the weather" is an idiom meaning to feel unwell or slightly sick. It does not refer to actual weather conditions.',
   },
+
+  // =========================
+  // WRITING
+  // =========================
   {
     id: "writing-001",
     skill: "writing",
@@ -192,9 +220,35 @@ export const CHALLENGES: Challenge[] = [
     title: "Writing",
     instruction: "Write a short introduction.",
     question: "Introduce yourself in English using at least 5 words.",
-    explanation: "Try to include your name and something about yourself.",
+    explanation:
+      "A good introduction usually includes your name and some basic information about yourself, such as your age, hometown, hobbies, or interests.",
     minWords: 5,
     requiredKeywords: ["i", "my"],
+
+    sampleAnswer:
+      "Hello! My name is Alex. I am a student. I love learning English and reading books. Nice to meet you!",
+
+    usefulVocabulary: [
+      {
+        word: "student",
+        meaning: "Học sinh / sinh viên",
+      },
+      {
+        word: "hobby",
+        meaning: "Sở thích",
+      },
+      {
+        word: "interested in",
+        meaning: "Quan tâm đến / yêu thích",
+      },
+    ],
+
+    usefulStructures: [
+      "My name is ...",
+      "I am ... years old.",
+      "I live in ...",
+      "I enjoy ...",
+    ],
   },
   {
     id: "writing-002",
@@ -204,8 +258,44 @@ export const CHALLENGES: Challenge[] = [
     title: "Writing",
     instruction: "Write a short paragraph.",
     question: "Describe your favorite hobby in English.",
-    explanation: "Write at least 8 words and include the required keywords.",
+    explanation:
+      "A good paragraph should introduce your hobby, explain why you enjoy it, and describe when or how you do it. Try to connect your ideas using simple sentences.",
+
     minWords: 8,
     requiredKeywords: ["i", "because"],
+
+    sampleAnswer:
+      "My favorite hobby is reading books. I usually read in the evening because it helps me relax after a busy day. I enjoy reading stories about adventure and science. Reading also helps me learn new vocabulary and improve my English.",
+
+    usefulVocabulary: [
+      {
+        word: "favorite hobby",
+        meaning: "Sở thích yêu thích",
+      },
+      {
+        word: "relax",
+        meaning: "Thư giãn",
+      },
+      {
+        word: "adventure",
+        meaning: "Cuộc phiêu lưu",
+      },
+      {
+        word: "improve",
+        meaning: "Cải thiện",
+      },
+      {
+        word: "vocabulary",
+        meaning: "Từ vựng",
+      },
+    ],
+
+    usefulStructures: [
+      "My favorite hobby is ...",
+      "I usually ... because ...",
+      "I enjoy ...",
+      "It helps me ...",
+      "I also ...",
+    ],
   },
 ];

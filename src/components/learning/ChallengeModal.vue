@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { ArrowRight, Headphones, Keyboard, Volume2, X } from "lucide-vue-next";
+import {
+  ArrowRight,
+  BookOpen,
+  Headphones,
+  Keyboard,
+  SkipForward,
+  Volume2,
+  X,
+} from "lucide-vue-next";
 
 import type { Challenge, ChallengeResult } from "@/types/learning";
 
 import QuestionOptions from "./QuestionOptions.vue";
 import WritingChallenge from "./WritingChallenge.vue";
 import AnswerFeedback from "./AnswerFeedback.vue";
+import ChallengeAnswer from "./ChallengeAnswer.vue";
 
 const props = defineProps<{
   challenge: Challenge;
@@ -15,21 +24,38 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   submit: [answer: string];
+  showAnswer: [];
+  skip: [];
   close: [];
 }>();
 
 const answer = ref("");
+const isAnswerRevealed = ref(false);
 
 const isListening = computed(() => props.challenge.skill === "listening");
 
+const hasAnswerContent = computed(() => {
+  if (props.challenge.type === "writing") {
+    return Boolean(props.challenge.sampleAnswer);
+  }
+
+  return Boolean(props.challenge.correctAnswer || props.challenge.transcript);
+});
+
 const canSubmit = computed(
-  () => !props.result && answer.value.trim().length > 0,
+  () =>
+    !props.result && !isAnswerRevealed.value && answer.value.trim().length > 0,
+);
+
+const isLocked = computed(
+  () => Boolean(props.result) || isAnswerRevealed.value,
 );
 
 watch(
   () => props.challenge.id,
   () => {
     answer.value = "";
+    isAnswerRevealed.value = false;
   },
 );
 
@@ -54,8 +80,22 @@ function handleSubmit(): void {
   emit("submit", answer.value.trim());
 }
 
+function handleShowAnswer(): void {
+  if (props.result || isAnswerRevealed.value) return;
+  if (!hasAnswerContent.value) return;
+
+  isAnswerRevealed.value = true;
+  emit("showAnswer");
+}
+
+function handleSkip(): void {
+  if (props.result || isAnswerRevealed.value) return;
+
+  emit("skip");
+}
+
 function handleClose(): void {
-  if (!props.result) return;
+  if (!props.result && !isAnswerRevealed.value) return;
 
   emit("close");
 }
@@ -101,7 +141,7 @@ onBeforeUnmount(() => {
         </div>
 
         <button
-          v-if="result"
+          v-if="result || isAnswerRevealed"
           type="button"
           class="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
           aria-label="Close challenge"
@@ -130,6 +170,7 @@ onBeforeUnmount(() => {
           </h3>
         </div>
 
+        <!-- Listening audio -->
         <div
           v-if="isListening"
           class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
@@ -157,7 +198,7 @@ onBeforeUnmount(() => {
           v-if="challenge.type === 'multiple-choice'"
           v-model="answer"
           :options="challenge.options ?? []"
-          :disabled="Boolean(result)"
+          :disabled="isLocked"
         />
 
         <!-- Writing -->
@@ -166,23 +207,49 @@ onBeforeUnmount(() => {
           v-model="answer"
           :min-words="challenge.minWords ?? 1"
           :keywords="challenge.requiredKeywords ?? []"
-          :disabled="Boolean(result)"
+          :disabled="isLocked"
           @submit="handleSubmit"
         />
 
+        <!-- Answer feedback -->
         <AnswerFeedback v-if="result" :result="result" />
 
-        <button
-          v-if="!result"
-          type="button"
-          :disabled="!canSubmit"
-          class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-3.5 font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
-          @click="handleSubmit"
-        >
-          Submit answer
-          <ArrowRight :size="18" />
-        </button>
+        <!-- Revealed answer -->
+        <ChallengeAnswer v-else-if="isAnswerRevealed" :challenge="challenge" />
 
+        <!-- Actions before answering -->
+        <div v-if="!result && !isAnswerRevealed" class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 font-bold text-slate-300 transition hover:bg-white/10"
+            @click="handleSkip"
+          >
+            <SkipForward :size="17" />
+            Skip
+          </button>
+
+          <button
+            v-if="hasAnswerContent"
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-xl border border-purple-400/20 px-4 py-3 font-bold text-purple-300 transition hover:bg-purple-400/10"
+            @click="handleShowAnswer"
+          >
+            <BookOpen :size="17" />
+            Show answer
+          </button>
+
+          <button
+            type="button"
+            :disabled="!canSubmit"
+            class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3.5 font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+            @click="handleSubmit"
+          >
+            Submit answer
+            <ArrowRight :size="18" />
+          </button>
+        </div>
+
+        <!-- Continue after result or revealed answer -->
         <button
           v-else
           type="button"

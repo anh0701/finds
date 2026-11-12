@@ -51,6 +51,16 @@ export interface Challenge {
   requiredKeywords?: string[];
   audioText?: string;
   reviewWord?: string;
+
+  sampleAnswer?: string;
+  transcript?: string;
+
+  usefulVocabulary?: {
+    word: string;
+    meaning: string;
+  }[];
+
+  usefulStructures?: string[];
 }
 
 export interface ChallengeResult {

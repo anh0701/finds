@@ -21,7 +21,8 @@ import SnakeControls from "@/components/game/SnakeControls.vue";
 import LearningStats from "@/components/learning/LearningStats.vue";
 import ChallengeModal from "@/components/learning/ChallengeModal.vue";
 
-import { useSnakeGame } from "@/composables/useSnakeGame";
+import { SCORE_PER_FOOD, useSnakeGame } from "@/composables/useSnakeGame";
+
 import { useLearningEngine } from "@/composables/useLearningEngine";
 import { useLearningStore } from "@/stores/learningStore";
 
@@ -50,6 +51,7 @@ const {
   isStarted,
   isGameOver,
   isWon,
+  addScore,
   startGame,
   pauseGame,
   resetGame,
@@ -68,16 +70,32 @@ function handleFoodEaten(): void {
 }
 
 function handleSubmitAnswer(answer: string): void {
-  submitAnswer(answer);
+  const result = submitAnswer(answer);
+
+  if (!result) return;
+
+  // Chỉ trả lời đúng mới được cộng điểm Snake.
+  if (result.isCorrect) {
+    addScore(SCORE_PER_FOOD);
+  }
 }
 
-function handleChallengeClose(): void {
+function resumeGameAfterChallenge(): void {
   closeChallenge();
   challengeOpen.value = false;
 
   if (!isGameOver.value && !isWon.value) {
     startGame();
   }
+}
+
+function handleChallengeSkip(): void {
+  // Skip không tính điểm và không ghi nhận learning attempt.
+  resumeGameAfterChallenge();
+}
+
+function handleChallengeClose(): void {
+  resumeGameAfterChallenge();
 }
 
 function handleRestart(): void {
@@ -130,7 +148,7 @@ onMounted(() => {
 
 <template>
   <main class="min-h-screen overflow-hidden bg-[#080b16] px-4 py-8 text-white">
-    <div class="mx-auto max-w-5xl">
+    <div class="mx-auto max-w-[1600px]">
       <!-- Header -->
       <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -155,28 +173,35 @@ onMounted(() => {
 
           <p class="mt-2 text-sm text-slate-400">Eat. Grow. Survive. Learn.</p>
         </div>
-
-        <div
-          class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur"
-        >
-          <p
-            class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-          >
-            Your best
-          </p>
-
-          <p class="mt-1 text-2xl font-black text-yellow-300">
-            {{ bestScore }}
-          </p>
-        </div>
       </header>
 
-      <!-- Main layout -->
-      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <!-- Board -->
+      <!-- Main layout: 3 columns -->
+      <div
+        class="grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] xl:grid-cols-[280px_minmax(0,1fr)_300px]"
+      >
+        <!-- LEFT: STATS -->
+        <aside class="space-y-4">
+          <SnakeStats
+            :score="score"
+            :best-score="bestScore"
+            :level="level"
+            :speed-multiplier="speedMultiplier"
+          />
+
+          <LearningStats
+            :xp="stats.xp"
+            :stars="stats.stars"
+            :combo="stats.combo"
+            :accuracy="stats.accuracy"
+            :learned-words="stats.learnedWords"
+            :review-words="stats.reviewWords"
+          />
+        </aside>
+
+        <!-- CENTER: GAME BOARD -->
         <section class="min-w-0">
           <div
-            class="relative mx-auto max-w-[600px] rounded-3xl border border-emerald-400/30 bg-[#0d1324] p-2 shadow-[0_0_25px_#39ff8830]"
+            class="relative mx-auto w-full max-w-[700px] rounded-3xl border border-emerald-400/30 bg-[#0d1324] p-2 shadow-[0_0_25px_#39ff8830]"
           >
             <SnakeBoard :snake="snake" :food="food" />
 
@@ -277,24 +302,9 @@ onMounted(() => {
           </div>
         </section>
 
-        <!-- Sidebar -->
+        <!-- RIGHT: CONTROLS + INSTRUCTIONS -->
         <aside class="space-y-4">
-          <SnakeStats
-            :score="score"
-            :best-score="bestScore"
-            :level="level"
-            :speed-multiplier="speedMultiplier"
-          />
-
-          <LearningStats
-            :xp="stats.xp"
-            :stars="stats.stars"
-            :combo="stats.combo"
-            :accuracy="stats.accuracy"
-            :learned-words="stats.learnedWords"
-            :review-words="stats.reviewWords"
-          />
-
+          <!-- Game Controls -->
           <SnakeControls
             :is-playing="isPlaying"
             @start="handleStart"
@@ -306,6 +316,7 @@ onMounted(() => {
             @right="handleMoveRight"
           />
 
+          <!-- How to play -->
           <section class="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div class="mb-4 flex items-center gap-2">
               <Keyboard :size="18" class="text-emerald-400" />
@@ -318,33 +329,37 @@ onMounted(() => {
             </div>
 
             <div class="space-y-4 text-sm text-slate-400">
-              <div class="flex items-center gap-3">
-                <Apple :size="17" class="shrink-0 text-pink-400" />
-                <span>Eat food to gain 10 points and start a challenge.</span>
+              <div class="flex items-start gap-3">
+                <Apple :size="17" class="mt-0.5 shrink-0 text-pink-400" />
+                <span>
+                  Eat food to start a challenge. Get 10 points for a correct
+                  answer.
+                </span>
               </div>
 
-              <div class="flex items-center gap-3">
-                <Trophy :size="17" class="shrink-0 text-yellow-400" />
-                <span>Every 50 points increases your level.</span>
+              <div class="flex items-start gap-3">
+                <Trophy :size="17" class="mt-0.5 shrink-0 text-yellow-400" />
+                <span> Every 50 points increases your level. </span>
               </div>
 
-              <div class="flex items-center gap-3">
-                <Keyboard :size="17" class="shrink-0 text-sky-400" />
-                <span>Move with WASD or arrow keys.</span>
+              <div class="flex items-start gap-3">
+                <Keyboard :size="17" class="mt-0.5 shrink-0 text-sky-400" />
+                <span> Move with WASD or arrow keys. </span>
               </div>
 
-              <div class="flex items-center gap-3">
-                <Pause :size="17" class="shrink-0 text-purple-400" />
-                <span>Press Space to pause or resume.</span>
+              <div class="flex items-start gap-3">
+                <Pause :size="17" class="mt-0.5 shrink-0 text-purple-400" />
+                <span> Press Space to pause or resume. </span>
               </div>
 
-              <div class="flex items-center gap-3">
-                <BookOpen :size="17" class="shrink-0 text-purple-300" />
-                <span>Answer English questions to earn XP and stars.</span>
+              <div class="flex items-start gap-3">
+                <BookOpen :size="17" class="mt-0.5 shrink-0 text-purple-300" />
+                <span> Answer English questions to earn XP and stars. </span>
               </div>
             </div>
           </section>
 
+          <!-- Pro tip -->
           <section
             class="rounded-2xl border border-purple-400/20 bg-purple-400/5 p-4"
           >
@@ -362,6 +377,7 @@ onMounted(() => {
         </aside>
       </div>
 
+      <!-- Footer -->
       <footer class="mt-8 text-center text-xs text-slate-600">
         NEON SNAKE ARCADE · VUE 3 · ENGLISH SURVIVAL
       </footer>
@@ -373,6 +389,7 @@ onMounted(() => {
       :challenge="currentChallenge"
       :result="lastResult"
       @submit="handleSubmitAnswer"
+      @skip="handleChallengeSkip"
       @close="handleChallengeClose"
     />
   </main>
