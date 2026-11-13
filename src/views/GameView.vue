@@ -21,100 +21,130 @@ import SnakeControls from "@/components/game/SnakeControls.vue";
 import LearningStats from "@/components/learning/LearningStats.vue";
 import ChallengeModal from "@/components/learning/ChallengeModal.vue";
 
-import { SCORE_PER_FOOD, useSnakeGame } from "@/composables/useSnakeGame";
-
+import { useSnakeGame } from "@/composables/useSnakeGame";
 import { useLearningEngine } from "@/composables/useLearningEngine";
 import { useLearningStore } from "@/stores/learningStore";
-
-const challengeOpen = ref(false);
 
 const learning = useLearningEngine();
 const learningStore = useLearningStore();
 
+const challengeOpen = ref(false);
+
 const {
-  currentChallenge,
-  lastResult,
   stats,
-  startChallenge,
-  submitAnswer,
-  closeChallenge,
+  currentTestQuestion,
+  lastTestResult,
+  testQuestionIndex,
+  testCorrectCount,
+  testProgress,
+  testStatus,
+  testPassed,
+  isTestCompleted,
+  startLevelTest,
+  submitTestAnswer,
+  advanceTest,
+  closeLevelTest,
 } = learning;
 
 const {
   snake,
   food,
   score,
+  levelScore,
   bestScore,
   level,
+  targetScore,
+  levelProgress,
   speedMultiplier,
   isPlaying,
   isStarted,
   isGameOver,
   isWon,
-  addScore,
+  isLevelTestRequired,
   startGame,
   pauseGame,
   resetGame,
+  completeLevelTest,
   moveUp,
   moveDown,
   moveLeft,
   moveRight,
 } = useSnakeGame({
-  onFoodEaten: handleFoodEaten,
+  onLevelTargetReached: handleLevelTargetReached,
   isInputBlocked: () => challengeOpen.value,
 });
 
-function handleFoodEaten(): void {
-  startChallenge();
+/**
+ * Khi đạt mục tiêu điểm của level:
+ * - Snake tự động tạm dừng.
+ * - Bắt đầu bài kiểm tra 10 câu.
+ */
+function handleLevelTargetReached(): void {
   challengeOpen.value = true;
+  startLevelTest();
 }
 
-function handleSubmitAnswer(answer: string): void {
-  const result = submitAnswer(answer);
-
-  if (!result) return;
-
-  // Chỉ trả lời đúng mới được cộng điểm Snake.
-  if (result.isCorrect) {
-    addScore(SCORE_PER_FOOD);
-  }
+/**
+ * Gửi câu trả lời của bài kiểm tra level.
+ */
+function handleSubmitTestAnswer(answer: string): void {
+  submitTestAnswer(answer);
 }
 
-function resumeGameAfterChallenge(): void {
-  closeChallenge();
+/**
+ * Chuyển sang câu tiếp theo.
+ * Sau câu thứ 10, engine sẽ xác định PASS / FAIL.
+ */
+function handleNextTestQuestion(): void {
+  advanceTest();
+}
+
+/**
+ * Hoàn thành bài kiểm tra:
+ * - PASS: tăng level và tiếp tục Snake.
+ * - FAIL: giữ level, mở lại bài kiểm tra khi người chơi chọn thử lại.
+ */
+function handleFinishTest(): void {
+  if (!isTestCompleted.value) return;
+
+  const passed = testPassed.value === true;
+
+  closeLevelTest();
   challengeOpen.value = false;
 
-  if (!isGameOver.value && !isWon.value) {
-    startGame();
-  }
+  completeLevelTest(passed);
 }
 
-function handleChallengeSkip(): void {
-  // Skip không tính điểm và không ghi nhận learning attempt.
-  resumeGameAfterChallenge();
+/**
+ * Làm lại bài kiểm tra nếu không đạt.
+ */
+function handleRetryTest(): void {
+  startLevelTest();
 }
 
-function handleChallengeClose(): void {
-  resumeGameAfterChallenge();
-}
-
+/**
+ * Khởi động lại toàn bộ lượt chơi.
+ */
 function handleRestart(): void {
   if (challengeOpen.value) return;
 
-  closeChallenge();
+  closeLevelTest();
   resetGame();
 }
 
+/**
+ * Chơi lại sau khi game over / win.
+ */
 function handlePlayAgain(): void {
   if (challengeOpen.value) return;
 
-  closeChallenge();
+  closeLevelTest();
   resetGame();
   startGame();
 }
 
 function handleStart(): void {
-  if (challengeOpen.value) return;
+  if (challengeOpen.value || isLevelTestRequired.value) return;
 
   startGame();
 }
@@ -175,7 +205,7 @@ onMounted(() => {
         </div>
       </header>
 
-      <!-- Main layout: 3 columns -->
+      <!-- Main layout -->
       <div
         class="grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] xl:grid-cols-[280px_minmax(0,1fr)_300px]"
       >
@@ -186,6 +216,9 @@ onMounted(() => {
             :best-score="bestScore"
             :level="level"
             :speed-multiplier="speedMultiplier"
+            :level-score="levelScore"
+            :target-score="targetScore"
+            :level-progress="levelProgress"
           />
 
           <LearningStats
@@ -226,7 +259,7 @@ onMounted(() => {
               </p>
 
               <p class="mt-1 text-xs text-slate-500">
-                Eat food to unlock English challenges.
+                Eat 5 foods to unlock a level test.
               </p>
 
               <button
@@ -299,12 +332,34 @@ onMounted(() => {
                 Play again
               </button>
             </div>
+
+            <!-- Level progress -->
+            <div
+              v-if="isStarted && !isGameOver && !isWon"
+              class="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-[#080b16]/85 p-3 backdrop-blur-sm"
+            >
+              <div class="mb-2 flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-300">
+                  LEVEL {{ level }} PROGRESS
+                </span>
+
+                <span class="font-bold text-emerald-400">
+                  {{ levelScore }} / {{ targetScore }}
+                </span>
+              </div>
+
+              <div class="h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  class="h-full rounded-full bg-emerald-400 transition-all duration-300"
+                  :style="{ width: `${levelProgress}%` }"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
         <!-- RIGHT: CONTROLS + INSTRUCTIONS -->
         <aside class="space-y-4">
-          <!-- Game Controls -->
           <SnakeControls
             :is-playing="isPlaying"
             @start="handleStart"
@@ -331,30 +386,41 @@ onMounted(() => {
             <div class="space-y-4 text-sm text-slate-400">
               <div class="flex items-start gap-3">
                 <Apple :size="17" class="mt-0.5 shrink-0 text-pink-400" />
+
                 <span>
-                  Eat food to start a challenge. Get 10 points for a correct
-                  answer.
+                  Eat food to earn 10 points. Collect 50 points to unlock a
+                  level test.
                 </span>
               </div>
 
               <div class="flex items-start gap-3">
                 <Trophy :size="17" class="mt-0.5 shrink-0 text-yellow-400" />
-                <span> Every 50 points increases your level. </span>
+
+                <span>
+                  Pass the 10-question test with at least 5 correct answers to
+                  advance.
+                </span>
               </div>
 
               <div class="flex items-start gap-3">
                 <Keyboard :size="17" class="mt-0.5 shrink-0 text-sky-400" />
-                <span> Move with WASD or arrow keys. </span>
+
+                <span>Move with WASD or arrow keys.</span>
               </div>
 
               <div class="flex items-start gap-3">
                 <Pause :size="17" class="mt-0.5 shrink-0 text-purple-400" />
-                <span> Press Space to pause or resume. </span>
+
+                <span>Press Space to pause or resume.</span>
               </div>
 
               <div class="flex items-start gap-3">
                 <BookOpen :size="17" class="mt-0.5 shrink-0 text-purple-300" />
-                <span> Answer English questions to earn XP and stars. </span>
+
+                <span>
+                  Each level test includes Vocabulary, Grammar, Reading,
+                  Listening and Writing.
+                </span>
               </div>
             </div>
           </section>
@@ -383,14 +449,22 @@ onMounted(() => {
       </footer>
     </div>
 
-    <!-- Learning challenge -->
+    <!-- Level test -->
     <ChallengeModal
-      v-if="challengeOpen && currentChallenge"
-      :challenge="currentChallenge"
-      :result="lastResult"
-      @submit="handleSubmitAnswer"
-      @skip="handleChallengeSkip"
-      @close="handleChallengeClose"
+      v-if="challengeOpen && currentTestQuestion"
+      :challenge="currentTestQuestion"
+      :result="lastTestResult"
+      :question-number="testQuestionIndex + 1"
+      :total-questions="10"
+      :progress="testProgress"
+      :correct-count="testCorrectCount"
+      :test-status="testStatus"
+      :test-passed="testPassed"
+      @submit="handleSubmitTestAnswer"
+      @next="handleNextTestQuestion"
+      @finish="handleFinishTest"
+      @retry="handleRetryTest"
+      @close="handleFinishTest"
     />
   </main>
 </template>

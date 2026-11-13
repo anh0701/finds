@@ -3,10 +3,12 @@ import { CHALLENGES, SKILLS } from "@/data/challenges";
 import { useLearningStore } from "@/stores/learningStore";
 import type { Challenge, LearningSkill } from "@/types/learning";
 
+const TEST_QUESTION_COUNT = 10;
+const QUESTIONS_PER_SKILL = 2;
+
 export function useAdaptiveLearning() {
   const store = useLearningStore();
 
-  // Remember the skill selected in the previous challenge.
   const previousSkill = ref<LearningSkill | null>(null);
 
   const skillPriorities = computed(() => {
@@ -18,15 +20,30 @@ export function useAdaptiveLearning() {
 
       const practiceFrequency = Math.min(progress.attempts / 10, 1);
 
-      const weaknessScore = 1 - accuracy;
-      const lackOfPractice = 1 - practiceFrequency;
-
       return {
         skill,
-        score: weaknessScore * 0.65 + lackOfPractice * 0.35,
+        score: (1 - accuracy) * 0.65 + (1 - practiceFrequency) * 0.35,
       };
     }).sort((a, b) => b.score - a.score);
   });
+
+  function randomItem<T>(items: T[]): T | undefined {
+    if (items.length === 0) return undefined;
+
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function shuffle<T>(items: T[]): T[] {
+    const result = [...items];
+
+    for (let i = result.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [result[i], result[j]] = [result[j]!, result[i]!];
+    }
+
+    return result;
+  }
 
   function chooseSkill(): LearningSkill {
     const availableSkills = SKILLS.filter((skill) =>
@@ -37,7 +54,6 @@ export function useAdaptiveLearning() {
       throw new Error("No learning skills are available.");
     }
 
-    // Avoid selecting the same skill in consecutive challenges.
     const eligibleSkills =
       availableSkills.length > 1
         ? availableSkills.filter((skill) => skill !== previousSkill.value)
@@ -47,8 +63,6 @@ export function useAdaptiveLearning() {
       eligibleSkills.includes(item.skill),
     );
 
-    // Use weighted random selection instead of always choosing
-    // the skill with the highest priority.
     const weightedSkills = priorities.map((item) => ({
       skill: item.skill,
       weight: Math.max(item.score, 0.1) ** 2,
@@ -104,15 +118,10 @@ export function useAdaptiveLearning() {
       candidates = CHALLENGES.filter((challenge) => challenge.skill === skill);
     }
 
-    if (candidates.length === 0) {
-      throw new Error(`No challenges available for skill: ${skill}`);
-    }
-
-    const randomIndex = Math.floor(Math.random() * candidates.length);
-    const selected = candidates[randomIndex];
+    const selected = randomItem(candidates);
 
     if (!selected) {
-      throw new Error("No learning challenge is available.");
+      throw new Error(`No challenges available for skill: ${skill}`);
     }
 
     store.rememberChallenge(selected.id);
@@ -120,9 +129,79 @@ export function useAdaptiveLearning() {
     return selected;
   }
 
+  /**
+   * Select 10 questions for a level test.
+   * Each learning skill contributes exactly 2 questions.
+   */
+  function chooseLevelTestChallenges(): Challenge[] {
+    const selected: Challenge[] = [];
+    const selectedIds = new Set<string>();
+    const recentIds = store.state.lastChallengeIds;
+
+    function selectForSkill(skill: LearningSkill): void {
+      const available = CHALLENGES.filter(
+        (challenge) =>
+          challenge.skill === skill && !selectedIds.has(challenge.id),
+      );
+
+      if (available.length < QUESTIONS_PER_SKILL) {
+        throw new Error(
+          `Level test requires at least ${QUESTIONS_PER_SKILL} challenges for ${skill}. Available: ${available.length}.`,
+        );
+      }
+
+      const progress = store.state.skillProgress[skill];
+
+      // Prefer the current adaptive difficulty.
+      const matchingDifficulty = available.filter(
+        (challenge) => challenge.difficulty === progress.difficulty,
+      );
+
+      // Avoid recently used questions when possible.
+      const fresh = available.filter(
+        (challenge) => !recentIds.includes(challenge.id),
+      );
+
+      const preferredFresh = fresh.filter(
+        (challenge) => challenge.difficulty === progress.difficulty,
+      );
+
+      let pool =
+        preferredFresh.length >= QUESTIONS_PER_SKILL
+          ? preferredFresh
+          : matchingDifficulty.length >= QUESTIONS_PER_SKILL
+            ? matchingDifficulty
+            : fresh.length >= QUESTIONS_PER_SKILL
+              ? fresh
+              : available;
+
+      pool = shuffle(pool);
+
+      const questions = pool.slice(0, QUESTIONS_PER_SKILL);
+
+      questions.forEach((challenge) => {
+        selected.push(challenge);
+        selectedIds.add(challenge.id);
+        store.rememberChallenge(challenge.id);
+      });
+    }
+
+    // Every skill must appear in the test.
+    SKILLS.forEach(selectForSkill);
+
+    if (selected.length !== TEST_QUESTION_COUNT) {
+      throw new Error(
+        `Expected ${TEST_QUESTION_COUNT} questions, got ${selected.length}.`,
+      );
+    }
+
+    return shuffle(selected);
+  }
+
   return {
     skillPriorities,
     chooseSkill,
     chooseChallenge,
+    chooseLevelTestChallenges,
   };
 }
