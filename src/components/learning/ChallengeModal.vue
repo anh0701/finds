@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 import {
   ArrowRight,
@@ -22,6 +22,17 @@ import AnswerFeedback from "./AnswerFeedback.vue";
 import ChallengeAnswer from "./ChallengeAnswer.vue";
 
 type TestStatus = "idle" | "in-progress" | "passed" | "failed";
+
+const resultSection = ref<HTMLElement | null>(null);
+
+async function scrollToResult(): Promise<void> {
+  await nextTick();
+
+  resultSection.value?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+}
 
 const props = withDefaults(
   defineProps<{
@@ -120,6 +131,7 @@ function handleSubmit(): void {
   if (!canSubmit.value) return;
 
   emit("submit", answer.value.trim());
+  void scrollToResult();
 }
 
 function handleShowAnswer(): void {
@@ -128,12 +140,14 @@ function handleShowAnswer(): void {
 
   isAnswerRevealed.value = true;
   emit("showAnswer");
+  void scrollToResult();
 }
 
 function handleSkip(): void {
   if (props.result || isAnswerRevealed.value) return;
 
   emit("skip");
+  void scrollToResult();
 }
 
 function handleClose(): void {
@@ -173,14 +187,14 @@ onBeforeUnmount(() => {
     class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"
   >
     <section
-      class="my-auto w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-[#0d1324] shadow-2xl"
+      class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d1324] shadow-2xl"
       role="dialog"
       aria-modal="true"
       aria-labelledby="challenge-title"
     >
       <!-- Header -->
       <header
-        class="flex items-center justify-between border-b border-white/10 px-6 py-5"
+        class="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5"
       >
         <div class="flex items-center gap-3">
           <div class="rounded-xl bg-purple-400/10 p-3 text-purple-300">
@@ -214,190 +228,184 @@ onBeforeUnmount(() => {
         </button>
       </header>
 
-      <div class="space-y-6 p-6">
-        <!-- TEST RESULT -->
-        <template v-if="isTestCompleted">
-          <div class="py-5 text-center">
-            <div
-              class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border"
-              :class="
-                testPassed
-                  ? 'border-emerald-400/30 bg-emerald-400/10'
-                  : 'border-pink-400/30 bg-pink-400/10'
-              "
-            >
-              <CheckCircle2
-                v-if="testPassed"
-                :size="42"
-                class="text-emerald-400"
-              />
-
-              <XCircle v-else :size="42" class="text-pink-400" />
-            </div>
-
-            <h2
-              class="text-3xl font-black"
-              :class="testPassed ? 'text-emerald-400' : 'text-pink-400'"
-            >
-              {{ testPassed ? "LEVEL PASSED!" : "TEST FAILED" }}
-            </h2>
-
-            <p class="mt-3 text-slate-400">
-              {{
-                testPassed
-                  ? "Great job! You are ready for the next level."
-                  : "Keep practicing! You can try this level test again."
-              }}
-            </p>
-
-            <div class="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p
-                class="text-sm font-bold uppercase tracking-widest text-slate-400"
+      <!-- Main content -->
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <!-- Scrollable content -->
+        <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
+          <!-- TEST RESULT -->
+          <template v-if="isTestCompleted">
+            <div class="py-5 text-center">
+              <div
+                class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border"
+                :class="
+                  testPassed
+                    ? 'border-emerald-400/30 bg-emerald-400/10'
+                    : 'border-pink-400/30 bg-pink-400/10'
+                "
               >
-                Your result
-              </p>
-
-              <p
-                class="mt-3 text-5xl font-black"
-                :class="testPassed ? 'text-emerald-400' : 'text-pink-400'"
-              >
-                {{ correctCount }} / {{ totalQuestions }}
-              </p>
-
-              <p class="mt-2 text-sm text-slate-400">Correct answers</p>
-
-              <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  class="h-full rounded-full transition-all duration-500"
-                  :class="testPassed ? 'bg-emerald-400' : 'bg-pink-400'"
-                  :style="{
-                    width: `${(correctCount / totalQuestions) * 100}%`,
-                  }"
+                <CheckCircle2
+                  v-if="testPassed"
+                  :size="42"
+                  class="text-emerald-400"
                 />
+
+                <XCircle v-else :size="42" class="text-pink-400" />
               </div>
 
-              <p class="mt-3 text-xs text-slate-500">
-                You need at least 5 correct answers to pass.
-              </p>
-            </div>
-          </div>
-
-          <!-- PASS -->
-          <button
-            v-if="testPassed"
-            type="button"
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-3.5 font-black text-slate-950 transition hover:bg-emerald-300"
-            @click="handleFinish"
-          >
-            Continue to next level
-            <ArrowRight :size="18" />
-          </button>
-
-          <!-- FAIL -->
-          <button
-            v-else
-            type="button"
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-400 px-5 py-3.5 font-black text-slate-950 transition hover:bg-purple-300"
-            @click="handleRetry"
-          >
-            <RotateCcw :size="18" />
-            Retry test
-          </button>
-        </template>
-
-        <!-- QUESTION CONTENT -->
-        <template v-else>
-          <!-- Test progress -->
-          <div v-if="isTestMode" class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span
-                class="text-xs font-bold uppercase tracking-widest text-slate-400"
+              <h2
+                class="text-3xl font-black"
+                :class="testPassed ? 'text-emerald-400' : 'text-pink-400'"
               >
-                Question {{ questionNumber }} of {{ totalQuestions }}
-              </span>
+                {{ testPassed ? "LEVEL PASSED!" : "TEST FAILED" }}
+              </h2>
 
-              <span class="text-xs font-bold text-emerald-400">
-                {{ correctCount }} correct
-              </span>
+              <p class="mt-3 text-slate-400">
+                {{
+                  testPassed
+                    ? "Great job! You are ready for the next level."
+                    : "Keep practicing! You can try this level test again."
+                }}
+              </p>
+
+              <div
+                class="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5"
+              >
+                <p
+                  class="text-sm font-bold uppercase tracking-widest text-slate-400"
+                >
+                  Your result
+                </p>
+
+                <p
+                  class="mt-3 text-5xl font-black"
+                  :class="testPassed ? 'text-emerald-400' : 'text-pink-400'"
+                >
+                  {{ correctCount }} / {{ totalQuestions }}
+                </p>
+
+                <p class="mt-2 text-sm text-slate-400">Correct answers</p>
+
+                <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="testPassed ? 'bg-emerald-400' : 'bg-pink-400'"
+                    :style="{
+                      width: `${(correctCount / totalQuestions) * 100}%`,
+                    }"
+                  />
+                </div>
+
+                <p class="mt-3 text-xs text-slate-500">
+                  You need at least 5 correct answers to pass.
+                </p>
+              </div>
+            </div>
+          </template>
+
+          <!-- QUESTION CONTENT -->
+          <template v-else>
+            <!-- Test progress -->
+            <div v-if="isTestMode" class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span
+                  class="text-xs font-bold uppercase tracking-widest text-slate-400"
+                >
+                  Question {{ questionNumber }} of {{ totalQuestions }}
+                </span>
+
+                <span class="text-xs font-bold text-emerald-400">
+                  {{ correctCount }} correct
+                </span>
+              </div>
+
+              <div class="h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  class="h-full rounded-full bg-emerald-400 transition-all duration-300"
+                  :style="{ width: `${progressWidth}%` }"
+                />
+              </div>
             </div>
 
-            <div class="h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                class="h-full rounded-full bg-emerald-400 transition-all duration-300"
-                :style="{ width: `${progressWidth}%` }"
+            <!-- Question -->
+            <div>
+              <div class="mb-3 flex flex-wrap items-center gap-2">
+                <span
+                  class="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-bold capitalize text-purple-300"
+                >
+                  {{ challenge.difficulty }}
+                </span>
+
+                <span class="text-xs text-slate-400">
+                  {{ challenge.instruction }}
+                </span>
+              </div>
+
+              <h3 class="text-xl font-black leading-relaxed text-white">
+                {{ challenge.question }}
+              </h3>
+            </div>
+
+            <!-- Listening audio -->
+            <div
+              v-if="isListening"
+              class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
+            >
+              <div>
+                <p class="font-bold text-white">Listen carefully</p>
+
+                <p class="mt-1 text-xs text-slate-500">
+                  Audio is generated by your browser.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="rounded-xl bg-emerald-400 p-3 text-slate-950 transition hover:bg-emerald-300"
+                aria-label="Play audio"
+                @click="playAudio"
+              >
+                <Volume2 :size="20" />
+              </button>
+            </div>
+
+            <!-- Multiple choice -->
+            <QuestionOptions
+              v-if="challenge.type === 'multiple-choice' && !isAnswerRevealed"
+              v-model="answer"
+              :options="challenge.options ?? []"
+              :disabled="isLocked"
+            />
+
+            <!-- Writing -->
+            <WritingChallenge
+              v-else-if="challenge.type === 'writing' && !isAnswerRevealed"
+              v-model="answer"
+              :min-words="challenge.minWords ?? 1"
+              :keywords="challenge.requiredKeywords ?? []"
+              :disabled="isLocked"
+              @submit="handleSubmit"
+            />
+
+            <div
+              v-if="isAnswerRevealed || result"
+              ref="resultSection"
+              class="scroll-mt-6 space-y-4"
+            >
+              <ChallengeAnswer v-if="isAnswerRevealed" :challenge="challenge" />
+
+              <AnswerFeedback
+                v-else-if="result && result.userAnswer !== 'Skipped'"
+                :result="result"
               />
             </div>
-          </div>
+          </template>
+        </div>
 
-          <!-- Question -->
-          <div>
-            <div class="mb-3 flex flex-wrap items-center gap-2">
-              <span
-                class="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-bold capitalize text-purple-300"
-              >
-                {{ challenge.difficulty }}
-              </span>
-
-              <span class="text-xs text-slate-400">
-                {{ challenge.instruction }}
-              </span>
-            </div>
-
-            <h3 class="text-xl font-black leading-relaxed text-white">
-              {{ challenge.question }}
-            </h3>
-          </div>
-
-          <!-- Listening audio -->
-          <div
-            v-if="isListening"
-            class="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
-          >
-            <div>
-              <p class="font-bold text-white">Listen carefully</p>
-
-              <p class="mt-1 text-xs text-slate-500">
-                Audio is generated by your browser.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              class="rounded-xl bg-emerald-400 p-3 text-slate-950 transition hover:bg-emerald-300"
-              aria-label="Play audio"
-              @click="playAudio"
-            >
-              <Volume2 :size="20" />
-            </button>
-          </div>
-
-          <!-- Multiple choice -->
-          <QuestionOptions
-            v-if="challenge.type === 'multiple-choice' && !isAnswerRevealed"
-            v-model="answer"
-            :options="challenge.options ?? []"
-            :disabled="isLocked"
-          />
-
-          <!-- Writing -->
-          <WritingChallenge
-            v-else-if="challenge.type === 'writing' && !isAnswerRevealed"
-            v-model="answer"
-            :min-words="challenge.minWords ?? 1"
-            :keywords="challenge.requiredKeywords ?? []"
-            :disabled="isLocked"
-            @submit="handleSubmit"
-          />
-
-          <!-- Show answer: chỉ xuất hiện khi bấm Show answer -->
-          <ChallengeAnswer v-if="isAnswerRevealed" :challenge="challenge" />
-
-          <!-- Feedback: chỉ hiện khi người chơi thực sự trả lời -->
-          <AnswerFeedback
-            v-else-if="result && result.userAnswer !== 'Skipped'"
-            :result="result"
-          />
-
+        <!-- Fixed actions -->
+        <div
+          v-if="!isTestCompleted"
+          class="shrink-0 border-t border-white/10 bg-[#0d1324] p-6"
+        >
           <!-- Actions before answering -->
           <div v-if="!result && !isAnswerRevealed" class="flex flex-wrap gap-2">
             <button
@@ -451,7 +459,32 @@ onBeforeUnmount(() => {
             Continue game
             <ArrowRight :size="18" />
           </button>
-        </template>
+        </div>
+
+        <!-- Test result actions -->
+        <div v-else class="shrink-0 border-t border-white/10 bg-[#0d1324] p-6">
+          <!-- PASS -->
+          <button
+            v-if="testPassed"
+            type="button"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-3.5 font-black text-slate-950 transition hover:bg-emerald-300"
+            @click="handleFinish"
+          >
+            Continue to next level
+            <ArrowRight :size="18" />
+          </button>
+
+          <!-- FAIL -->
+          <button
+            v-else
+            type="button"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-400 px-5 py-3.5 font-black text-slate-950 transition hover:bg-purple-300"
+            @click="handleRetry"
+          >
+            <RotateCcw :size="18" />
+            Retry test
+          </button>
+        </div>
       </div>
     </section>
   </div>
