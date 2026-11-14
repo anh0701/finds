@@ -20,6 +20,9 @@ import QuestionOptions from "./QuestionOptions.vue";
 import WritingChallenge from "./WritingChallenge.vue";
 import AnswerFeedback from "./AnswerFeedback.vue";
 import ChallengeAnswer from "./ChallengeAnswer.vue";
+import { useSpeech } from "@/composables/useSpeech";
+
+const { speak, stop } = useSpeech();
 
 type TestStatus = "idle" | "in-progress" | "passed" | "failed";
 
@@ -113,18 +116,7 @@ watch(
 );
 
 function playAudio(): void {
-  if (!("speechSynthesis" in window)) return;
-
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(
-    props.challenge.audioText ?? props.challenge.question,
-  );
-
-  utterance.lang = "en-US";
-  utterance.rate = 0.85;
-
-  window.speechSynthesis.speak(utterance);
+  speak(props.challenge.audioText ?? "");
 }
 
 function handleSubmit(): void {
@@ -176,9 +168,7 @@ function handleRetry(): void {
 }
 
 onBeforeUnmount(() => {
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-  }
+  stop();
 });
 </script>
 
