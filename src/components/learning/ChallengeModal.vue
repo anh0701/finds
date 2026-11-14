@@ -123,7 +123,6 @@ function handleSubmit(): void {
 }
 
 function handleShowAnswer(): void {
-  if (isTestMode.value) return;
   if (props.result || isAnswerRevealed.value) return;
   if (!hasAnswerContent.value) return;
 
@@ -132,7 +131,6 @@ function handleShowAnswer(): void {
 }
 
 function handleSkip(): void {
-  if (isTestMode.value) return;
   if (props.result || isAnswerRevealed.value) return;
 
   emit("skip");
@@ -403,7 +401,6 @@ onBeforeUnmount(() => {
           <!-- Actions before answering -->
           <div v-if="!result && !isAnswerRevealed" class="flex flex-wrap gap-2">
             <button
-              v-if="!isTestMode"
               type="button"
               class="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 font-bold text-slate-300 transition hover:bg-white/10"
               @click="handleSkip"
@@ -413,7 +410,7 @@ onBeforeUnmount(() => {
             </button>
 
             <button
-              v-if="!isTestMode && hasAnswerContent"
+              v-if="hasAnswerContent"
               type="button"
               class="flex items-center justify-center gap-2 rounded-xl border border-purple-400/20 px-4 py-3 font-bold text-purple-300 transition hover:bg-purple-400/10"
               @click="handleShowAnswer"

@@ -1,11 +1,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import { useWallSystem } from "@/composables/useWallSystem";
+import type { Point } from "@/types/game";
 
-export interface Point {
-  x: number;
-  y: number;
-}
+// Giữ export này để các file cũ đang import Point không bị lỗi.
+export type { Point } from "@/types/game";
 
 export interface SnakeGameOptions {
   onLevelTargetReached?: (level: number, score: number) => void;
@@ -14,12 +13,14 @@ export interface SnakeGameOptions {
 
 const GRID_SIZE = 20;
 
-const INITIAL_SPEED = 250;
-const MIN_SPEED = 65;
-const SPEED_STEP = 12;
+const GAME_SPEED = 250;
 
 export const SCORE_PER_FOOD = 10;
 export const TARGET_SCORE = 50;
+
+const BASE_TARGET_SCORE = 50;
+const TARGET_SCORE_STEP = 10;
+const MAX_TARGET_SCORE = 100;
 
 const SCORE_STORAGE_KEY = "snake-best";
 
@@ -57,24 +58,78 @@ function createSnake(): Point[] {
   return INITIAL_SNAKE.map((segment) => ({ ...segment }));
 }
 
-function createFood(snake: Point[], walls: Point[]): Point {
-  const availableCells: Point[] = [];
+function isWall(point: Point, walls: Point[]): boolean {
+  return walls.some((wall) => isSamePoint(wall, point));
+}
 
-  for (let y = 0; y < GRID_SIZE; y += 1) {
-    for (let x = 0; x < GRID_SIZE; x += 1) {
-      const point = { x, y };
+/**
+ * Tìm các ô có thể tiếp cận từ đầu rắn.
+ * Bàn chơi sử dụng cơ chế đi xuyên biên (wrap around).
+ */
+function getReachableCells(head: Point, walls: Point[]): Point[] {
+  const visited = new Set<string>();
+  const queue: Point[] = [{ ...head }];
+  const reachable: Point[] = [];
 
-      const occupiedBySnake = snake.some((segment) =>
-        isSamePoint(segment, point),
-      );
+  const directions: Point[] = [
+    { x: 0, y: -1 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+  ];
 
-      const occupiedByWall = walls.some((wall) => isSamePoint(wall, point));
+  visited.add(`${head.x},${head.y}`);
 
-      if (!occupiedBySnake && !occupiedByWall) {
-        availableCells.push(point);
-      }
+  let index = 0;
+
+  while (index < queue.length) {
+    const current = queue[index];
+
+    index += 1;
+
+    if (!current) continue;
+
+    reachable.push(current);
+
+    for (const direction of directions) {
+      const next: Point = {
+        x: (current.x + direction.x + GRID_SIZE) % GRID_SIZE,
+        y: (current.y + direction.y + GRID_SIZE) % GRID_SIZE,
+      };
+
+      const key = `${next.x},${next.y}`;
+
+      if (visited.has(key)) continue;
+      if (isWall(next, walls)) continue;
+
+      visited.add(key);
+      queue.push(next);
     }
   }
+
+  return reachable;
+}
+
+/**
+ * Tạo thức ăn:
+ * - Không trùng thân rắn.
+ * - Không trùng tường.
+ * - Chỉ xuất hiện ở vùng có thể tiếp cận.
+ */
+function createFood(snake: Point[], walls: Point[]): Point {
+  const head = snake[0];
+
+  if (!head) {
+    return { x: -1, y: -1 };
+  }
+
+  const reachableCells = getReachableCells(head, walls);
+
+  const availableCells = reachableCells.filter(
+    (point) =>
+      !snake.some((segment) => isSamePoint(segment, point)) &&
+      !isWall(point, walls),
+  );
 
   if (availableCells.length === 0) {
     return { x: -1, y: -1 };
@@ -110,14 +165,24 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
   const level = ref(1);
 
+  // ------------------------------------
   // Wall system
+  // ------------------------------------
+
   const wallSystem = useWallSystem();
 
-  wallSystem.setLevel(level.value, snake.value);
+  let direction: Point = { ...INITIAL_DIRECTION };
+  let nextDirection: Point = { ...INITIAL_DIRECTION };
 
-  const food = ref<Point>(createFood(snake.value, wallSystem.walls.value));
+  wallSystem.setLevel(level.value, snake.value, direction);
 
   const walls = wallSystem.walls;
+
+  const food = ref<Point>(createFood(snake.value, walls.value));
+
+  // ------------------------------------
+  // Game flags
+  // ------------------------------------
 
   const isPlaying = ref(false);
   const isStarted = ref(false);
@@ -126,30 +191,29 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
   const isLevelTestRequired = ref(false);
 
-  let direction: Point = { ...INITIAL_DIRECTION };
-  let nextDirection: Point = { ...INITIAL_DIRECTION };
-
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   // ------------------------------------
   // Computed state
   // ------------------------------------
 
-  const targetScore = computed(() => TARGET_SCORE);
+  const targetScore = computed(() =>
+    Math.min(
+      BASE_TARGET_SCORE + (level.value - 1) * TARGET_SCORE_STEP,
+      MAX_TARGET_SCORE,
+    ),
+  );
 
   const levelProgress = computed(() =>
-    Math.min((levelScore.value / TARGET_SCORE) * 100, 100),
+    Math.min((levelScore.value / targetScore.value) * 100, 100),
   );
 
-  const isTargetReached = computed(() => levelScore.value >= TARGET_SCORE);
+  const isTargetReached = computed(() => levelScore.value >= targetScore.value);
 
-  const speed = computed(() =>
-    Math.max(MIN_SPEED, INITIAL_SPEED - (level.value - 1) * SPEED_STEP),
-  );
+  // Tốc độ luôn cố định, không phụ thuộc level.
+  const speed = computed(() => GAME_SPEED);
 
-  const speedMultiplier = computed(() =>
-    (INITIAL_SPEED / speed.value).toFixed(1),
-  );
+  const speedMultiplier = computed(() => "1.0");
 
   // ------------------------------------
   // Timer
@@ -167,7 +231,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     if (!isPlaying.value) return;
 
-    timer = setTimeout(move, speed.value);
+    timer = setTimeout(move, GAME_SPEED);
   }
 
   // ------------------------------------
@@ -182,7 +246,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     try {
       window.localStorage.setItem(SCORE_STORAGE_KEY, String(bestScore.value));
     } catch {
-      // The game still works without localStorage.
+      // Game vẫn hoạt động nếu localStorage không khả dụng.
     }
   }
 
@@ -201,7 +265,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     saveBestScore();
 
-    if (levelScore.value >= TARGET_SCORE) {
+    if (levelScore.value >= targetScore.value) {
       reachLevelTarget();
     }
   }
@@ -222,38 +286,39 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
   }
 
   /**
-   * Called by the View after the level test is completed.
+   * Được gọi sau khi hoàn thành bài kiểm tra.
    *
    * PASS:
-   * - Increase level.
-   * - Reset current level score.
-   * - Update wall layout.
-   * - Respawn food.
-   * - Resume Snake.
+   * - Tăng level.
+   * - Reset điểm level.
+   * - Tạo bản đồ mới.
+   * - Tạo thức ăn ở vị trí có thể tiếp cận.
+   * - Tiếp tục game với tốc độ cũ.
    *
    * FAIL:
-   * - Keep current level.
-   * - Keep the target score.
-   * - Stay paused until the player retries.
+   * - Giữ nguyên level và điểm.
+   * - Giữ game ở trạng thái tạm dừng.
    */
   function completeLevelTest(passed: boolean): void {
     if (!isLevelTestRequired.value) return;
 
+    stopTimer();
+
     if (!passed) {
       isPlaying.value = false;
-      stopTimer();
       return;
     }
 
     level.value += 1;
     levelScore.value = 0;
 
+    // Xóa trạng thái chờ bài kiểm tra.
     isLevelTestRequired.value = false;
 
-    // Load walls for the next level.
-    wallSystem.setLevel(level.value, snake.value);
+    // Tạo bản đồ mới, bảo vệ hướng di chuyển hiện tại.
+    wallSystem.setLevel(level.value, snake.value, direction);
 
-    // Respawn food outside walls and snake.
+    // Đảm bảo thức ăn nằm ngoài tường và thân rắn.
     food.value = createFood(snake.value, walls.value);
 
     startGame();
@@ -272,13 +337,12 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     levelScore.value = 0;
     level.value = 1;
 
-    // Restore level 1 wall layout.
-    wallSystem.setLevel(level.value, snake.value);
-
-    food.value = createFood(snake.value, walls.value);
-
     direction = { ...INITIAL_DIRECTION };
     nextDirection = { ...INITIAL_DIRECTION };
+
+    wallSystem.setLevel(level.value, snake.value, direction);
+
+    food.value = createFood(snake.value, walls.value);
 
     isPlaying.value = false;
     isStarted.value = false;
@@ -336,7 +400,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
   function changeDirection(next: Point): void {
     if (!isPlaying.value) return;
 
-    // Prevent reversing directly into the snake's body.
+    // Không cho phép quay ngược trực tiếp vào thân.
     if (next.x === -direction.x && next.y === -direction.y) {
       return;
     }
@@ -347,13 +411,13 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
   function move(): void {
     if (!isPlaying.value) return;
 
-    direction = nextDirection;
+    direction = { ...nextDirection };
 
     const head = snake.value[0];
 
     if (!head) return;
 
-    // Wrap around board boundaries.
+    // Di chuyển xuyên biên.
     const nextHead: Point = {
       x: (head.x + direction.x + GRID_SIZE) % GRID_SIZE,
       y: (head.y + direction.y + GRID_SIZE) % GRID_SIZE,
@@ -374,8 +438,7 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     // Self collision
     // ------------------------------------
 
-    // The tail moves away during a normal move,
-    // so it should not count as a collision.
+    // Đuôi sẽ rời vị trí hiện tại nếu không ăn thức ăn.
     const bodyToCheck = willEat ? snake.value : snake.value.slice(0, -1);
 
     const hitSelf = bodyToCheck.some((segment) =>
@@ -415,8 +478,14 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
       food.value = createFood(nextSnake, walls.value);
 
-      // Do not schedule another move while testing.
+      // Không tiếp tục di chuyển trong lúc làm bài kiểm tra.
       if (isLevelTestRequired.value) {
+        return;
+      }
+
+      // Không còn thức ăn có thể tiếp cận.
+      if (food.value.x < 0 || food.value.y < 0) {
+        endGame(true);
         return;
       }
     }

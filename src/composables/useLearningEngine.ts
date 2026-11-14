@@ -196,6 +196,51 @@ export function useLearningEngine() {
   }
 
   /**
+   * Ghi nhận câu hỏi bị bỏ qua hoặc xem đáp án.
+   * Câu này được tính là sai trong Level Test và không nhận XP.
+   */
+  function recordUnansweredTestQuestion(
+    action: "skipped" | "revealed",
+  ): ChallengeResult | null {
+    const challenge = currentTestQuestion.value;
+
+    if (
+      testStatus.value !== "in-progress" ||
+      !challenge ||
+      lastTestResult.value
+    ) {
+      return null;
+    }
+
+    const result: ChallengeResult = {
+      isCorrect: false,
+      userAnswer: action === "skipped" ? "Skipped" : "Answer revealed",
+      correctAnswer:
+        challenge.correctAnswer ??
+        challenge.sampleAnswer ??
+        "See the explanation for the correct answer.",
+      explanation:
+        action === "skipped"
+          ? "You skipped this question. It counts as an incorrect answer."
+          : "You revealed the answer. It counts as an incorrect answer.",
+      xpEarned: 0,
+    };
+
+    testAnswers.value.push(result);
+    lastTestResult.value = result;
+
+    return result;
+  }
+
+  function skipTestQuestion(): ChallengeResult | null {
+    return recordUnansweredTestQuestion("skipped");
+  }
+
+  function revealTestAnswer(): ChallengeResult | null {
+    return recordUnansweredTestQuestion("revealed");
+  }
+
+  /**
    * Move to the next question.
    * After question 10, calculate PASS or FAIL.
    */
@@ -254,6 +299,8 @@ export function useLearningEngine() {
     submitTestAnswer,
     advanceTest,
     closeLevelTest,
+    skipTestQuestion,
+    revealTestAnswer,
 
     // Constants.
     TEST_QUESTION_COUNT,

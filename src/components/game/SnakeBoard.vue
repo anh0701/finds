@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { Point } from "@/types/game";
 import { onMounted, ref, watch } from "vue";
-import type { Point } from "@/composables/useSnakeGame";
 
 const props = defineProps<{
   snake: Point[];

@@ -42,6 +42,8 @@ const {
   isTestCompleted,
   startLevelTest,
   submitTestAnswer,
+  skipTestQuestion,
+  revealTestAnswer,
   advanceTest,
   closeLevelTest,
 } = learning;
@@ -98,6 +100,22 @@ function handleSubmitTestAnswer(answer: string): void {
  */
 function handleNextTestQuestion(): void {
   advanceTest();
+}
+
+/**
+ * Người chơi bỏ qua câu hỏi.
+ * Câu hỏi được tính là sai, không nhận XP.
+ */
+function handleSkipTestQuestion(): void {
+  skipTestQuestion();
+}
+
+/**
+ * Người chơi xem đáp án.
+ * Câu hỏi được tính là sai, không nhận XP.
+ */
+function handleRevealTestAnswer(): void {
+  revealTestAnswer();
 }
 
 /**
@@ -440,6 +458,8 @@ onMounted(() => {
       :test-passed="testPassed"
       @submit="handleSubmitTestAnswer"
       @next="handleNextTestQuestion"
+      @show-answer="handleRevealTestAnswer"
+      @skip="handleSkipTestQuestion"
       @finish="handleFinishTest"
       @retry="handleRetryTest"
       @close="handleFinishTest"
