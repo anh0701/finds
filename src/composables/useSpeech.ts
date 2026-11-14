@@ -19,7 +19,7 @@ export function useSpeech() {
 
       utterance.onend = () => {
         index++;
-        setTimeout(speakNext, 600)
+        setTimeout(speakNext, 600);
       };
 
       window.speechSynthesis.speak(utterance);

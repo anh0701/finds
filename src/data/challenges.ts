@@ -5,6 +5,7 @@ import { grammarChallenges } from "@/data/challenges/grammar";
 import { readingChallenges } from "@/data/challenges/reading";
 import { listeningChallenges } from "@/data/challenges/listening";
 import { writingChallenges } from "@/data/challenges/writing";
+import { extendedReadingChallenges } from "./challenges/reading-hard";
 
 export const SKILLS: LearningSkill[] = [
   "vocabulary",
@@ -20,4 +21,5 @@ export const CHALLENGES = [
   ...readingChallenges,
   ...listeningChallenges,
   ...writingChallenges,
+  ...extendedReadingChallenges,
 ];

@@ -269,7 +269,7 @@ export const listeningChallenges: Challenge[] = [
   },
   {
     id: "listening-014",
-    skill: "grammar",
+    skill: "listening",
     difficulty: "medium",
     type: "multiple-choice",
     title: "Listening",
@@ -764,7 +764,7 @@ export const listeningChallenges: Challenge[] = [
   },
   {
     id: "listening-044",
-    skill: "grammar",
+    skill: "listening",
     difficulty: "hard",
     type: "multiple-choice",
     title: "Listening",
