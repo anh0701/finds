@@ -373,7 +373,7 @@ onBeforeUnmount(() => {
 
           <!-- Multiple choice -->
           <QuestionOptions
-            v-if="challenge.type === 'multiple-choice'"
+            v-if="challenge.type === 'multiple-choice' && !isAnswerRevealed"
             v-model="answer"
             :options="challenge.options ?? []"
             :disabled="isLocked"
@@ -381,7 +381,7 @@ onBeforeUnmount(() => {
 
           <!-- Writing -->
           <WritingChallenge
-            v-else-if="challenge.type === 'writing'"
+            v-else-if="challenge.type === 'writing' && !isAnswerRevealed"
             v-model="answer"
             :min-words="challenge.minWords ?? 1"
             :keywords="challenge.requiredKeywords ?? []"
@@ -389,13 +389,13 @@ onBeforeUnmount(() => {
             @submit="handleSubmit"
           />
 
-          <!-- Answer feedback -->
-          <AnswerFeedback v-if="result" :result="result" />
+          <!-- Show answer: chỉ xuất hiện khi bấm Show answer -->
+          <ChallengeAnswer v-if="isAnswerRevealed" :challenge="challenge" />
 
-          <!-- Revealed answer: normal challenge only -->
-          <ChallengeAnswer
-            v-else-if="isAnswerRevealed"
-            :challenge="challenge"
+          <!-- Feedback: chỉ hiện khi người chơi thực sự trả lời -->
+          <AnswerFeedback
+            v-else-if="result && result.userAnswer !== 'Skipped'"
+            :result="result"
           />
 
           <!-- Actions before answering -->
