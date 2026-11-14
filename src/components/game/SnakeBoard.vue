@@ -14,24 +14,74 @@ const GRID_SIZE = 20;
 const CELL_SIZE = 25;
 const BOARD_SIZE = GRID_SIZE * CELL_SIZE;
 
-function drawWalls(context: CanvasRenderingContext2D): void {
+function drawWalls(context: CanvasRenderingContext2D) {
   props.walls.forEach((wall) => {
-    const x = wall.x * CELL_SIZE;
-    const y = wall.y * CELL_SIZE;
+    const inset = 2;
+    const x = wall.x * CELL_SIZE + inset;
+    const y = wall.y * CELL_SIZE + inset;
+    const size = CELL_SIZE - inset * 2;
 
     context.save();
 
-    context.shadowColor = "#64748b";
-    context.shadowBlur = 7;
+    // Hình dạng khối gỗ
+    const path = new Path2D();
+    path.roundRect(x, y, size, size, 5);
 
-    context.fillStyle = "#475569";
-    context.strokeStyle = "#94a3b8";
+    // Màu gỗ chuyển sắc
+    const gradient = context.createLinearGradient(x, y, x + size, y + size);
+
+    gradient.addColorStop(0, "#d69a55");
+    gradient.addColorStop(0.45, "#a96832");
+    gradient.addColorStop(1, "#70401f");
+
+    context.fillStyle = gradient;
+    context.fill(path);
+
+    // Viền gỗ
+    context.strokeStyle = "#e8b878";
+    context.lineWidth = 1.5;
+    context.stroke(path);
+
+    // Giới hạn vân gỗ bên trong khối
+    context.clip(path);
+
+    // Các đường vân gỗ
+    context.strokeStyle = "rgba(65, 34, 15, 0.45)";
+    context.lineWidth = 1;
+
+    for (let index = 0; index < 3; index++) {
+      const grainY = y + 6 + index * 6;
+
+      context.beginPath();
+      context.moveTo(x + 3, grainY);
+
+      context.bezierCurveTo(
+        x + 7,
+        grainY - 2,
+        x + 12,
+        grainY + 2,
+        x + size - 3,
+        grainY,
+      );
+
+      context.stroke();
+    }
+
+    // Vân xoáy nhỏ trên gỗ
+    context.strokeStyle = "rgba(70, 35, 15, 0.55)";
     context.lineWidth = 1;
 
     context.beginPath();
-    context.roundRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4, 5);
+    context.ellipse(x + size * 0.55, y + size * 0.5, 3, 2, 0, 0, Math.PI * 2);
+    context.stroke();
 
-    context.fill();
+    // Ánh sáng trên cạnh khối gỗ
+    context.strokeStyle = "rgba(255, 224, 170, 0.45)";
+    context.lineWidth = 1;
+
+    context.beginPath();
+    context.moveTo(x + 5, y + 3);
+    context.lineTo(x + size - 5, y + 3);
     context.stroke();
 
     context.restore();
