@@ -1,5 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
+import { useWallSystem } from "@/composables/useWallSystem";
+
 export interface Point {
   x: number;
   y: number;
@@ -32,13 +34,20 @@ const INITIAL_DIRECTION: Point = { x: 1, y: 0 };
 const KEY_DIRECTIONS: Record<string, Point> = {
   arrowup: { x: 0, y: -1 },
   w: { x: 0, y: -1 },
+
   arrowdown: { x: 0, y: 1 },
   s: { x: 0, y: 1 },
+
   arrowleft: { x: -1, y: 0 },
   a: { x: -1, y: 0 },
+
   arrowright: { x: 1, y: 0 },
   d: { x: 1, y: 0 },
 };
+
+// ------------------------------------
+// Helpers
+// ------------------------------------
 
 function isSamePoint(a: Point, b: Point): boolean {
   return a.x === b.x && a.y === b.y;
@@ -48,17 +57,21 @@ function createSnake(): Point[] {
   return INITIAL_SNAKE.map((segment) => ({ ...segment }));
 }
 
-function createFood(snake: Point[]): Point {
+function createFood(snake: Point[], walls: Point[]): Point {
   const availableCells: Point[] = [];
 
   for (let y = 0; y < GRID_SIZE; y += 1) {
     for (let x = 0; x < GRID_SIZE; x += 1) {
-      const occupied = snake.some(
-        (segment) => segment.x === x && segment.y === y,
+      const point = { x, y };
+
+      const occupiedBySnake = snake.some((segment) =>
+        isSamePoint(segment, point),
       );
 
-      if (!occupied) {
-        availableCells.push({ x, y });
+      const occupiedByWall = walls.some((wall) => isSamePoint(wall, point));
+
+      if (!occupiedBySnake && !occupiedByWall) {
+        availableCells.push(point);
       }
     }
   }
@@ -80,13 +93,16 @@ function readBestScore(): number {
   }
 }
 
+// ------------------------------------
+// Main composable
+// ------------------------------------
+
 export function useSnakeGame(options: SnakeGameOptions = {}) {
   // ------------------------------------
   // Game state
   // ------------------------------------
 
   const snake = ref<Point[]>(createSnake());
-  const food = ref<Point>(createFood(snake.value));
 
   const score = ref(0);
   const levelScore = ref(0);
@@ -94,12 +110,20 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
   const level = ref(1);
 
+  // Wall system
+  const wallSystem = useWallSystem();
+
+  wallSystem.setLevel(level.value, snake.value);
+
+  const food = ref<Point>(createFood(snake.value, wallSystem.walls.value));
+
+  const walls = wallSystem.walls;
+
   const isPlaying = ref(false);
   const isStarted = ref(false);
   const isGameOver = ref(false);
   const isWon = ref(false);
 
-  // True when the player must complete a level test.
   const isLevelTestRequired = ref(false);
 
   let direction: Point = { ...INITIAL_DIRECTION };
@@ -203,6 +227,8 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
    * PASS:
    * - Increase level.
    * - Reset current level score.
+   * - Update wall layout.
+   * - Respawn food.
    * - Resume Snake.
    *
    * FAIL:
@@ -224,6 +250,12 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     isLevelTestRequired.value = false;
 
+    // Load walls for the next level.
+    wallSystem.setLevel(level.value, snake.value);
+
+    // Respawn food outside walls and snake.
+    food.value = createFood(snake.value, walls.value);
+
     startGame();
   }
 
@@ -235,11 +267,15 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     stopTimer();
 
     snake.value = createSnake();
-    food.value = createFood(snake.value);
 
     score.value = 0;
     levelScore.value = 0;
     level.value = 1;
+
+    // Restore level 1 wall layout.
+    wallSystem.setLevel(level.value, snake.value);
+
+    food.value = createFood(snake.value, walls.value);
 
     direction = { ...INITIAL_DIRECTION };
     nextDirection = { ...INITIAL_DIRECTION };
@@ -317,12 +353,26 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     if (!head) return;
 
+    // Wrap around board boundaries.
     const nextHead: Point = {
       x: (head.x + direction.x + GRID_SIZE) % GRID_SIZE,
       y: (head.y + direction.y + GRID_SIZE) % GRID_SIZE,
     };
 
     const willEat = isSamePoint(nextHead, food.value);
+
+    // ------------------------------------
+    // Wall collision
+    // ------------------------------------
+
+    if (wallSystem.isWall(nextHead)) {
+      endGame();
+      return;
+    }
+
+    // ------------------------------------
+    // Self collision
+    // ------------------------------------
 
     // The tail moves away during a normal move,
     // so it should not count as a collision.
@@ -337,6 +387,10 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
       return;
     }
 
+    // ------------------------------------
+    // Update snake
+    // ------------------------------------
+
     const nextSnake = [nextHead, ...snake.value];
 
     if (!willEat) {
@@ -345,18 +399,22 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
 
     snake.value = nextSnake;
 
+    // ------------------------------------
+    // Eat food
+    // ------------------------------------
+
     if (willEat) {
-      // Award game points without opening a question.
       addScore(SCORE_PER_FOOD);
 
-      if (nextSnake.length >= GRID_SIZE * GRID_SIZE) {
+      const availableCellCount = GRID_SIZE * GRID_SIZE - walls.value.length;
+
+      if (nextSnake.length >= availableCellCount) {
         endGame(true);
         return;
       }
 
-      food.value = createFood(nextSnake);
+      food.value = createFood(nextSnake, walls.value);
 
-      // The target may have been reached.
       // Do not schedule another move while testing.
       if (isLevelTestRequired.value) {
         return;
@@ -444,9 +502,14 @@ export function useSnakeGame(options: SnakeGameOptions = {}) {
     window.removeEventListener("keydown", handleKeydown);
   });
 
+  // ------------------------------------
+  // Return
+  // ------------------------------------
+
   return {
     snake,
     food,
+    walls,
 
     score,
     levelScore,

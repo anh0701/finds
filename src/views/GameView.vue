@@ -50,6 +50,7 @@ const {
   snake,
   food,
   score,
+  walls,
   levelScore,
   bestScore,
   level,
@@ -236,7 +237,7 @@ onMounted(() => {
           <div
             class="relative mx-auto w-full max-w-[700px] rounded-3xl border border-emerald-400/30 bg-[#0d1324] p-2 shadow-[0_0_25px_#39ff8830]"
           >
-            <SnakeBoard :snake="snake" :food="food" />
+            <SnakeBoard :snake="snake" :food="food" :walls="walls" />
 
             <!-- Start overlay -->
             <div
@@ -331,29 +332,6 @@ onMounted(() => {
                 <RotateCcw :size="18" />
                 Play again
               </button>
-            </div>
-
-            <!-- Level progress -->
-            <div
-              v-if="isStarted && !isGameOver && !isWon"
-              class="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-[#080b16]/85 p-3 backdrop-blur-sm"
-            >
-              <div class="mb-2 flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300">
-                  LEVEL {{ level }} PROGRESS
-                </span>
-
-                <span class="font-bold text-emerald-400">
-                  {{ levelScore }} / {{ targetScore }}
-                </span>
-              </div>
-
-              <div class="h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  class="h-full rounded-full bg-emerald-400 transition-all duration-300"
-                  :style="{ width: `${levelProgress}%` }"
-                />
-              </div>
             </div>
           </div>
         </section>
